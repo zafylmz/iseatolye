@@ -3,7 +3,7 @@
 $st = $c['settings']; $ct = $c['contact'];
 $socials = $c['socials'] ?? [];
 ?>
-<div class="bar"><h1>Ayarlar</h1><nav class="jump jump--inline"><a href="#iletisim">İletişim</a><a href="#kayit">Kayıt</a><a href="#odeme">Ödeme</a><a href="#eposta">E-posta</a><a href="#metinler">Metinler</a></nav></div>
+<div class="bar"><h1>Ayarlar</h1><nav class="jump jump--inline"><a href="#iletisim">İletişim</a><a href="#kayit">Kayıt</a><a href="#odeme">Ödeme</a><a href="#kart">Kartla ödeme</a><a href="#satici">Satıcı bilgileri</a><a href="#eposta">E-posta</a><a href="#metinler">Metinler</a></nav></div>
 <form method="post">
   <?= hidden($tok, 'ayarlar') ?>
   <section class="card" id="iletisim">
@@ -47,6 +47,18 @@ $socials = $c['socials'] ?? [];
     <p class="hint">Süre dolan ve ödemesi işaretlenmeyen kayıtlar silinmez, ama kontenjandan düşer ve yer başkasına açılır. Kötü niyetli sahte kayıtlarla etkinliğin "doldu" görünmesini önler.</p>
   </section>
 
+  <section class="card" id="satici">
+    <h2>Satıcı bilgileri</h2>
+    <p class="hint">Ön bilgilendirme formu ve mesafeli satış sözleşmesinde (<a href="/mesafeli-satis/" target="_blank">/mesafeli-satis/</a>) satıcı olarak görünür. Kartla ödeme için iyzico bu bilgilerin sitede yayında olmasını ister. Telefon ve e-posta İletişim bölümünden alınır.</p>
+    <div class="grid2">
+      <label>Unvan / ad soyad <span class="opt">(şahıs şirketinde ad soyad)</span><input name="seller_title" value="<?= e($st['seller_title'] ?? '') ?>"></label>
+      <label>Vergi dairesi ve no<input name="seller_tax" value="<?= e($st['seller_tax'] ?? '') ?>" placeholder="Kadıköy VD · 1234567890"></label>
+      <label class="span2">Açık adres<input name="seller_address" value="<?= e($st['seller_address'] ?? '') ?>"></label>
+      <label>MERSİS no <span class="opt">(varsa)</span><input name="seller_mersis" value="<?= e($st['seller_mersis'] ?? '') ?>"></label>
+      <label>KEP adresi <span class="opt">(varsa)</span><input name="seller_kep" value="<?= e($st['seller_kep'] ?? '') ?>"></label>
+    </div>
+  </section>
+
   <section class="card" id="eposta">
     <h2>E-posta</h2>
     <label class="check"><input type="checkbox" name="mail_enabled" value="1"<?= !empty($st['mail_enabled']) ? ' checked' : '' ?>> Bilgilendirme e-postaları gönderilsin (kayıt, onay, şifre sıfırlama)</label>
@@ -64,6 +76,18 @@ $socials = $c['socials'] ?? [];
     <label>Site adresi<input name="site_url" value="<?= e($st['site_url'] ?? '') ?>"></label>
   </section>
   <div class="actions"><button class="btn">Ayarları kaydet</button></div>
+</form>
+<?php require_once ROOT . '/inc/iyzico.php'; $iz = iyzico_config() ?? []; ?>
+<form class="card" method="post" autocomplete="off" id="kart">
+  <?= hidden($tok, 'iyzico') ?>
+  <h2>Kartla ödeme (iyzico) <?= $iz ? (!empty($iz['sandbox']) ? pill('Deneme ortamı', 'warn') : pill('Açık', 'on')) : pill('Kapalı', 'off') ?></h2>
+  <p class="hint">iyzico üye işyeri panelinde <b>Ayarlar &gt; Firma Ayarları</b> bölümündeki API anahtarı ve güvenlik anahtarını girin. Kaydettiğinizde anahtarlar iyzico'ya sorularak denenir. Açıkken tüm ücretli etkinliklerde "Kredi / banka kartı" seçeneği görünür; ödeme alınan kayıt kendiliğinden "Ödendi" ve onaylı olur.</p>
+  <div class="grid2">
+    <label>API anahtarı<input name="iz_api" value="<?= e($iz['api_key'] ?? '') ?>" required spellcheck="false"></label>
+    <label>Güvenlik anahtarı (secret) <span class="opt"><?= $iz ? '(değiştirmeyecekseniz boş bırakın)' : '' ?></span><input type="password" name="iz_secret" autocomplete="new-password"<?= $iz ? '' : ' required' ?>></label>
+    <label>Ortam<select name="iz_mode"><option value="live"<?= $iz && empty($iz['sandbox']) ? ' selected' : '' ?>>Canlı (gerçek ödeme)</option><option value="sandbox"<?= !$iz || !empty($iz['sandbox']) ? ' selected' : '' ?>>Deneme (sandbox, test kartları)</option></select></label>
+  </div>
+  <div class="actions"><button class="btn">Anahtarları dene ve kaydet</button><?php if ($iz): ?> <button class="btn btn--ghost" name="kaldir" value="1" formnovalidate>Kartla ödemeyi kapat</button><?php endif; ?></div>
 </form>
 <?php require_once ROOT . '/inc/smtp.php'; $sm = smtp_config() ?? []; $mailHost = preg_replace('/^www\./', '', strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'iseatolye.com.tr')))); ?>
 <form class="card" method="post" autocomplete="off" id="smtp">

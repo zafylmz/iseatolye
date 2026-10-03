@@ -47,7 +47,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   }
   if (!$free && !in_array($old['method'], $methods, true)) $errors[] = 'Bir ödeme yöntemi seçin.';
   $inv = $free ? [] : invoice_from_post($errors);
-  if (empty($_POST['kosul'])) $errors[] = 'Katılım koşullarını ve aydınlatma metnini onaylayın.';
+  if (empty($_POST['kosul'])) $errors[] = $free ? 'Katılım koşullarını ve aydınlatma metnini onaylayın.' : 'Katılım koşullarını, mesafeli satış sözleşmesini ve aydınlatma metnini onaylayın.';
   if (mb_strlen($old['note']) > 500) $errors[] = 'Not en fazla 500 karakter olabilir.';
   if (!$errors && !rate_hit('kayit:' . client_hash(), 12, 5)) $errors[] = 'Kısa sürede çok fazla deneme yaptınız, biraz sonra tekrar deneyin.';
 
@@ -89,6 +89,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       }
       require_once __DIR__ . '/inc/mail.php';
       mail_registration($r, $ev);
+      // Kartla ödemede doğrudan iyzico ödeme sayfasına geçilir
+      if ($r['method'] === 'iyzico' && $r['status'] === 'beklemede') { header('Location: /odeme.php?kod=' . rawurlencode($r['code']) . '&k=' . reg_key($r), true, 303); exit; }
       header('Location: ' . ticket_url($r, !$me) . (!$me ? '&' : '?') . 'yeni=1', true, 303);
       exit;
     }
@@ -181,13 +183,13 @@ include __DIR__ . '/inc/header.php';
           <legend><span class="fs__n">5</span>Ödeme</legend>
           <div class="opts">
             <?php foreach ($methods as $m): ?>
-              <label class="opt opt--row"><input type="radio" name="method" value="<?= $m ?>"<?= $old['method'] === $m ? ' checked' : '' ?> required><span class="opt__body"><strong><?= e(PAY_METHODS[$m]) ?></strong><span><?= e(['havale' => 'Kaydınızdan sonra hesap bilgileri gösterilir. Ödemeniz onaylanınca kaydınız kesinleşir.', 'yerinde' => 'Ücreti etkinlik günü nakit ya da kartla ödersiniz.', 'link' => 'Kaydınızdan sonra güvenli ödeme sayfasına yönlendirilirsiniz.'][$m]) ?></span></span></label>
+              <label class="opt opt--row"><input type="radio" name="method" value="<?= $m ?>"<?= $old['method'] === $m ? ' checked' : '' ?> required><span class="opt__body"><strong><?= e(PAY_METHODS[$m]) ?></strong><span><?= e(['havale' => 'Kaydınızdan sonra hesap bilgileri gösterilir. Ödemeniz onaylanınca kaydınız kesinleşir.', 'yerinde' => 'Ücreti etkinlik günü nakit ya da kartla ödersiniz.', 'link' => 'Kaydınızdan sonra güvenli ödeme sayfasına yönlendirilirsiniz.', 'iyzico' => 'iyzico güvenli ödeme sayfasında kartınızla ödersiniz. Ödeme alınınca kaydınız hemen kesinleşir.'][$m]) ?></span></span></label>
             <?php endforeach; ?>
           </div>
         </fieldset>
         <?php endif; ?>
 
-        <label class="consent"><input type="checkbox" name="kosul" value="1"<?= !empty($_POST['kosul']) ? ' checked' : '' ?> required><span><a href="/katilim-kosullari/" target="_blank">Katılım koşullarını</a> ve <a href="/gizlilik/" target="_blank">aydınlatma metnini</a> okudum, kabul ediyorum.</span></label>
+        <label class="consent"><input type="checkbox" name="kosul" value="1"<?= !empty($_POST['kosul']) ? ' checked' : '' ?> required><span><a href="/katilim-kosullari/" target="_blank">Katılım koşullarını</a>, <?php if (!$free): ?><a href="/mesafeli-satis/" target="_blank">ön bilgilendirme formu ve mesafeli satış sözleşmesini</a> ve <?php endif; ?><a href="/gizlilik/" target="_blank">aydınlatma metnini</a> okudum, kabul ediyorum.</span></label>
         <div class="join__submit"><button class="btn btn--lg" type="submit" data-join-btn>Kaydımı oluştur</button><p class="cform__msg" role="status" data-form-msg></p></div>
         <?php endif; ?>
       </form>

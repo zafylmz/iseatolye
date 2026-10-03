@@ -29,8 +29,10 @@ const PAY_METHODS = [
   'havale' => 'Havale / EFT',
   'yerinde' => 'Etkinlikte ödeme',
   'link' => 'Online ödeme bağlantısı',
+  'iyzico' => 'Kredi / banka kartı',
 ];
 // Sitede seçilebilen yöntemler. "Etkinlikte ödeme" kaldırıldı; eski kayıtlarda adı görünsün diye PAY_METHODS'ta duruyor.
+// Kartla ödeme (iyzico) etkinlik bazında seçilmez: anahtarlar girilince tüm ücretli etkinliklerde görünür.
 const PAY_METHODS_ACTIVE = ['havale', 'link'];
 const LEVELS = ['' => 'Belirtilmemiş', 'herkes' => 'Herkes için', 'baslangic' => 'Başlangıç', 'orta' => 'Orta seviye', 'ileri' => 'İleri seviye'];
 
@@ -180,7 +182,10 @@ function pay_methods(array $ev): array {
   if (event_is_free($ev)) return [];
   $m = array_values(array_intersect(PAY_METHODS_ACTIVE, (array) ($ev['pay_methods'] ?? ['havale'])));
   if (in_array('link', $m, true) && trim($ev['pay_link'] ?? '') === '') $m = array_values(array_diff($m, ['link']));
-  return $m ?: ['havale'];
+  $m = $m ?: ['havale'];
+  require_once __DIR__ . '/iyzico.php';
+  if (iyzico_on()) array_unshift($m, 'iyzico');
+  return $m;
 }
 
 // ---------- Katılımlar ----------
@@ -209,7 +214,7 @@ function capacity_of(array $ev, string $sid): int {
 // Böylece ödeme yapılmayan kayıtlarla yerler kalıcı olarak tutulamaz. Kayıt silinmez, panelde görünmeye devam eder.
 function holds_seat(array $r): bool {
   if (!in_array($r['status'], SEAT_STATUSES, true)) return false;
-  if ($r['status'] === 'onayli' || !empty($r['paid']) || !in_array($r['method'] ?? '', ['havale', 'link'], true)) return true;
+  if ($r['status'] === 'onayli' || !empty($r['paid']) || !in_array($r['method'] ?? '', ['havale', 'link', 'iyzico'], true)) return true;
   $h = (int) setting('hold_hours', 48);
   return $h <= 0 || (strtotime((string) ($r['created'] ?? '')) ?: time()) > time() - $h * 3600;
 }

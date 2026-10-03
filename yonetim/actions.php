@@ -564,7 +564,7 @@ switch ($action) {
       if ($label !== '' && filter_var($url, FILTER_VALIDATE_URL)) $c['socials'][] = ['label' => $label, 'url' => $url];
     }
     $st = &$c['settings'];
-    foreach (['site_url', 'mail_from', 'notify_email', 'bank_name', 'bank_holder', 'bank_iban', 'payment_note', 'cancel_policy', 'terms', 'reg_success_note'] as $k) $st[$k] = post($k);
+    foreach (['site_url', 'mail_from', 'notify_email', 'bank_name', 'bank_holder', 'bank_iban', 'payment_note', 'cancel_policy', 'terms', 'reg_success_note', 'seller_title', 'seller_tax', 'seller_address', 'seller_mersis', 'seller_kep'] as $k) $st[$k] = post($k);
     $st['site_url'] = rtrim($st['site_url'], '/');
     $st['bank_iban'] = strtoupper(preg_replace('/\s+/', ' ', $st['bank_iban']));
     foreach (['require_login', 'comment_moderation', 'mail_enabled'] as $k) $st[$k] = !empty($_POST[$k]);
@@ -602,6 +602,27 @@ switch ($action) {
     @chmod(SMTP_FILE, 0600);
     flash('E-posta hesabı kaydedildi ve ' . $to . ' adresine deneme e-postası gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.');
     redirect('./?s=ayarlar#smtp');
+
+  case 'iyzico':
+    require_once ROOT . '/inc/iyzico.php';
+    if (post('kaldir') === '1') {
+      if (is_file(IYZICO_FILE)) @unlink(IYZICO_FILE);
+      flash('Kartla ödeme kapatıldı. Kayıt formunda bu seçenek artık görünmez.');
+      redirect('./?s=ayarlar#kart');
+    }
+    $old = iyzico_config() ?? [];
+    $cfg = [
+      'api_key' => preg_replace('/\s+/', '', post('iz_api')),
+      'secret' => ($_POST['iz_secret'] ?? '') !== '' ? preg_replace('/\s+/', '', (string) $_POST['iz_secret']) : (string) ($old['secret'] ?? ''),
+      'sandbox' => post('iz_mode') !== 'live',
+    ];
+    if ($cfg['api_key'] === '' || $cfg['secret'] === '') throw new RuntimeException('API anahtarını ve güvenlik anahtarını yazın.');
+    $err = iyzico_test($cfg);
+    if ($err !== '') { flash('Kaydedilmedi, iyzico anahtarları kabul etmedi: ' . $err . ($cfg['sandbox'] ? ' (Deneme ortamı seçili; canlı anahtarlar için "Canlı" seçin.)' : ' (Canlı seçili; deneme anahtarları için "Deneme" seçin.)'), 'err'); redirect('./?s=ayarlar#kart'); }
+    if (@file_put_contents(IYZICO_FILE, "<?php\n// iyzico anahtarları (panelden oluşturuldu). Silerseniz kartla ödeme kapanır.\nreturn " . var_export($cfg, true) . ";\n", LOCK_EX) === false) throw new RuntimeException('data/iyzico.php yazılamadı. data klasörünün yazma iznini kontrol edin.');
+    @chmod(IYZICO_FILE, 0600);
+    flash('iyzico anahtarları doğrulandı ve kaydedildi. Kartla ödeme ' . ($cfg['sandbox'] ? 'deneme ortamında' : 'canlı olarak') . ' açık.');
+    redirect('./?s=ayarlar#kart');
 
   case 'deneme-epostasi':
     $to = admin_email();
