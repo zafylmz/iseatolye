@@ -646,6 +646,27 @@ switch ($action) {
     redirect('./?s=istatistik');
 
   // ---------- Galeri (görsel kütüphanesi) ----------
+  case 'medya-optimize':
+    // Büyük görselleri aynı adla, küçültülmüş ve sıkıştırılmış hâliyle değiştirir. Zaman aşımı olmasın diye parça parça çalışır.
+    $start = microtime(true); $done = 0; $saved = 0;
+    foreach (media_big() as $m) {
+      if (microtime(true) - $start > 20) break;
+      $file = ROOT . $m['path'];
+      $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+      $type = $ext === 'jpeg' ? 'jpg' : $ext;
+      $before = (int) filesize($file);
+      if ($ext === $type && image_optimize($file, $type, substr($file, 0, -strlen($ext) - 1), true) !== '') {
+        clearstatcache(true, $file);
+        $saved += max(0, $before - (int) filesize($file)); $done++;
+        $t = ROOT . thumb_path($m['path']); if (is_file($t)) @unlink($t);
+        make_thumb($m['path']);
+      }
+      media_save($m['path'], ['opt' => 1]);
+    }
+    $left = count(media_big());
+    flash($done . ' görsel küçültüldü, ' . round($saved / 1048576, 1) . ' MB yer açıldı.' . ($left ? ' ' . $left . ' görsel kaldı, düğmeye tekrar basın.' : ''));
+    redirect('./?s=galeri');
+
   case 'medya-yukle':
     // Tarayıcıdan tek tek gönderilen görseller; yanıt JSON
     header('Content-Type: application/json; charset=utf-8');
