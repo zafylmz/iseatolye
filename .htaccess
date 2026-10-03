@@ -1,0 +1,62 @@
+# İSE ATÖLYE web sitesi: Apache / cPanel ayarları
+DirectoryIndex index.php
+ErrorDocument 404 /404.php
+Options -Indexes
+
+RewriteEngine On
+# HTTPS ve www yönlendirmesi
+RewriteCond %{HTTPS} off [OR]
+RewriteCond %{HTTP_HOST} !^www\. [NC]
+RewriteCond %{HTTP_HOST} ^(?:www\.)?(.+)$ [NC]
+RewriteRule ^ https://www.%1%{REQUEST_URI} [L,R=301]
+
+# Eski WordPress adresleri
+RewriteRule ^etn/([a-z0-9-]+?)(-\d+)?/?$ /etkinlik/$1/ [L,R=301]
+RewriteRule ^etkinlik-takvimi/?$ /takvim/ [L,R=301]
+RewriteRule ^magaza/?$ /etkinlikler/ [L,R=301]
+
+# Temiz adresler
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^etkinlikler/?$ etkinlikler.php [L,QSA]
+RewriteRule ^etkinlik/([a-z0-9-]+)/?$ etkinlik.php?slug=$1 [L,QSA]
+RewriteRule ^etkinlik/([a-z0-9-]+)/katil/?$ katil.php?slug=$1 [L,QSA]
+RewriteRule ^etkinlik/([a-z0-9-]+)/takvim\.ics$ ics.php?slug=$1 [L,QSA]
+RewriteRule ^bilet/([A-Za-z0-9-]+)/?$ bilet.php?kod=$1 [L,QSA]
+RewriteRule ^takvim/?$ takvim.php [L,QSA]
+RewriteRule ^galeri/?$ galeri.php [L,QSA]
+RewriteRule ^galeri/([a-z0-9-]+)/?$ galeri.php?slug=$1 [L,QSA]
+RewriteRule ^mekanlar/?$ mekanlar.php [L,QSA]
+RewriteRule ^mekanlar/([a-z0-9-]+)/?$ mekanlar.php?slug=$1 [L,QSA]
+RewriteRule ^uye/([a-z0-9]+)/?$ uye.php?k=$1 [L,QSA]
+RewriteRule ^(kurumsal|hakkimizda|iletisim|gizlilik|katilim-kosullari|giris|uye-ol|cikis|hesabim|sifremi-unuttum|sifre-yenile)/?$ $1.php [L,QSA]
+RewriteRule ^blog/?$ blog.php [L,QSA]
+RewriteRule ^blog/rss\.xml$ blog-rss.php [L]
+RewriteRule ^blog/([a-z0-9-]+)/?$ blog-yazi.php?slug=$1 [L,QSA]
+
+# İç klasörlere doğrudan erişimi kapat
+RewriteRule ^(data|inc)(/|$) - [F,L]
+RewriteRule ^yonetim/(views/|lib\.php|actions\.php) - [F,L]
+RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
+
+# Güvenlik başlıkları: site başka bir sitenin içinde çerçeveye alınamaz, tarayıcı dosya türünü tahmin etmez,
+# bağlantı her zaman HTTPS ile kurulur
+<IfModule mod_headers.c>
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+</IfModule>

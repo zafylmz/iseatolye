@@ -1,0 +1,142 @@
+{
+  "categories": [
+    {"id": "atolye", "name": "Atölye"},
+    {"id": "iyi-olus", "name": "Yoga ve iyi oluş"},
+    {"id": "ses", "name": "Ses ve meditasyon"},
+    {"id": "sosyal", "name": "Sosyal buluşma"},
+    {"id": "kurs", "name": "Kurs ve seri"}
+  ],
+  "venues": [
+    {"id": "v-poti", "slug": "poti-dukkan", "name": "Pöti Dükkan", "type": "mekan", "address": "", "district": "Silivri", "city": "İstanbul", "map_url": "", "phone": "", "note": "", "photo": "/uploads/ornek/mekan-poti.jpg", "capacity": 14},
+    {"id": "v-eser", "slug": "eser-diamond-hotel", "name": "Eser Diamond Hotel", "type": "mekan", "address": "", "district": "Silivri", "city": "İstanbul", "map_url": "", "phone": "", "note": "Otelin otoparkı katılımcılara açıktır.", "photo": "/uploads/ornek/mekan-eser.jpg", "capacity": 10},
+    {"id": "v-burcin", "slug": "burcinin-firini", "name": "Burçin'in Fırını", "type": "mekan", "address": "", "district": "Silivri", "city": "İstanbul", "map_url": "", "phone": "", "note": "", "photo": "/uploads/ornek/mekan-burcin.jpg", "capacity": 16},
+    {"id": "v-sahil", "slug": "silivri-sahil", "name": "Silivri Sahil Parkı", "type": "acik", "address": "Sahil yolu, çay bahçesi önündeki çimenlik alan", "district": "Silivri", "city": "İstanbul", "map_url": "", "phone": "", "note": "Açık hava etkinliği. Matınızı ve suyunuzu getirmeyi unutmayın; yağmurda etkinlik ertelenir.", "photo": "/uploads/ornek/mekan-sahil.jpg", "capacity": 25}
+  ],
+  "instructors": [
+    {"id": "i-muleyke", "name": "Müleyke Çimen", "title": "Kurucu, atölye eğitmeni", "bio": "İse Atölye'nin kurucusu. Yoga etkinliklerinden yaratıcı workshoplara uzanan atölyeleri tasarlıyor ve yürütüyor.", "photo": "", "instagram": "https://www.instagram.com/iseatolye"}
+  ],
+  "events": [
+    {
+      "id": "e-celenk", "slug": "kapi-celengi-yapim-atolyesi", "status": "yayinda", "title": "Kapı Çelengi Yapım Atölyesi",
+      "summary": "Kendi ellerinizle hazırlayacağınız özel bir çelenkle kapınızı süsleyin.",
+      "category": "atolye", "cover": "/uploads/ornek/kapi-celengi.jpg", "gallery": [],
+      "body": "Kendi ellerinizle hazırlayacağınız özel bir çelenkle kapınızı süslemeye ne dersiniz? Bu atölyede farklı malzemeleri bir araya getirerek kendi tasarımınızı oluşturacak, atölye sonunda çelenginizi evinize götüreceksiniz.\n\nKontenjan sınırlıdır.",
+      "includes": ["Tüm malzemeler atölye ücretine dahildir", "Hazırladığınız çelengi evinize götürürsünüz"],
+      "bring": [], "faq": [], "instructors": ["i-muleyke"], "level": "herkes", "age": "", "duration": "2 saat",
+      "sessions": [{"id": "s1", "date": "2026-10-29", "start": "17:00", "end": "19:00", "venue": "v-poti", "place": "", "capacity": 14, "status": "acik", "note": ""}],
+      "package": false, "capacity": 0,
+      "tickets": [{"id": "t1", "name": "Kişi başı", "price": 1250, "seats": 1, "limit": 0, "until": "", "note": "Tüm malzemeler dahil"}],
+      "pay_methods": ["havale", "yerinde"], "pay_link": "",
+      "reg_open": true, "reg_close_hours": 3, "max_per_order": 4, "waitlist": true, "approval": false,
+      "show_left": true, "show_attendees": true, "comments": true, "featured": true, "pinned": false,
+      "cancel_policy": "", "created": "2026-10-01 10:00", "updated": "2026-10-01 10:00"
+    },
+    {
+      "id": "e-ses", "slug": "su-uzerinde-ses-yolculugu", "status": "yayinda", "title": "Su üzerinde ses yolculuğu",
+      "summary": "Floating Sound Journey: suyun üzerinde, sesin titreşimleriyle derin bir gevşeme deneyimi.",
+      "category": "ses", "cover": "/uploads/ornek/su-uzerinde-ses.jpg", "gallery": [],
+      "body": "Floating Sound Journey deneyiminde suyun üzerinde bedeninizi ve zihninizi dinlendireceksiniz. Sesin titreşimleri eşliğinde derin bir gevşeme alanına giriyoruz.\n\nEtkinlik boyunca sağlıklı içecek ikramımız var. Kontenjan sınırlıdır.\n\n## Seans seçimi\n\nHavuz deneyimi küçük gruplarla yapıldığı için gün içinde birden fazla seans var. Kayıt olurken size uygun seansı seçin.",
+      "includes": ["Sağlıklı içecek ikramı", "Havuz ve ses yolculuğu deneyimi"],
+      "bring": ["Mayo ve havlu", "Rahat bir kıyafet"], "faq": [{"q": "Yüzme bilmem gerekiyor mu?", "a": "Hayır. Su üzerinde güvenli şekilde destekli olarak uzanırsınız."}],
+      "instructors": ["i-muleyke"], "level": "herkes", "age": "18+", "duration": "90 dakika",
+      "sessions": [
+        {"id": "s1", "date": "2026-10-30", "start": "11:00", "end": "12:30", "venue": "v-eser", "place": "", "capacity": 10, "status": "acik", "note": "Sabah seansı"},
+        {"id": "s2", "date": "2026-10-30", "start": "15:00", "end": "16:30", "venue": "v-eser", "place": "", "capacity": 10, "status": "acik", "note": "Öğleden sonra seansı"},
+        {"id": "s3", "date": "2026-10-30", "start": "19:00", "end": "20:30", "venue": "v-eser", "place": "", "capacity": 10, "status": "acik", "note": "Akşam seansı"}
+      ],
+      "package": false, "capacity": 0,
+      "tickets": [{"id": "t1", "name": "Kişi başı", "price": 2000, "seats": 1, "limit": 0, "until": "", "note": ""}],
+      "pay_methods": ["havale"], "pay_link": "",
+      "reg_open": true, "reg_close_hours": 24, "max_per_order": 2, "waitlist": true, "approval": false,
+      "show_left": true, "show_attendees": true, "comments": true, "featured": true, "pinned": false,
+      "cancel_policy": "", "created": "2026-10-01 10:00", "updated": "2026-10-01 10:00"
+    },
+    {
+      "id": "e-parfum", "slug": "parfum-atolyesi", "status": "yayinda", "title": "Parfüm Atölyesi",
+      "summary": "Farklı esansları tanıyın, kendi notalarınızı bir araya getirerek size özel parfümünüzü hazırlayın.",
+      "category": "atolye", "cover": "/uploads/ornek/parfum-atolyesi.jpg", "gallery": [],
+      "body": "Bu atölyede farklı esansları tanıyacak, kendi zevkinize uygun notaları bir araya getirerek tamamen size özel parfümünüzü hazırlayacaksınız.\n\nEtkinlik sonunda tasarladığınız parfümü yanınızda götürebileceksiniz.",
+      "includes": ["Parfüm tasarımı ve tüm esans deneme deneyimi", "Hazırladığınız parfüm şişesi"],
+      "bring": [], "faq": [], "instructors": ["i-muleyke"], "level": "herkes", "age": "", "duration": "2 saat",
+      "sessions": [{"id": "s1", "date": "2026-10-31", "start": "19:00", "end": "21:00", "venue": "v-burcin", "place": "", "capacity": 16, "status": "acik", "note": ""}],
+      "package": false, "capacity": 0,
+      "tickets": [
+        {"id": "t1", "name": "Tek kişi", "price": 1500, "seats": 1, "limit": 0, "until": "", "note": ""},
+        {"id": "t2", "name": "İki kişi (arkadaşınla gel)", "price": 2800, "seats": 2, "limit": 4, "until": "", "note": "İki kişilik katılım"}
+      ],
+      "pay_methods": ["havale", "yerinde"], "pay_link": "",
+      "reg_open": true, "reg_close_hours": 3, "max_per_order": 3, "waitlist": true, "approval": false,
+      "show_left": true, "show_attendees": true, "comments": true, "featured": true, "pinned": false,
+      "cancel_policy": "", "created": "2026-10-01 10:00", "updated": "2026-10-01 10:00"
+    },
+    {
+      "id": "e-quiz", "slug": "quiz-cocktail-night", "status": "taslak", "title": "Quiz & Cocktail Night",
+      "summary": "Takımını kur, soruları cevapla, kokteylini yudumla.",
+      "category": "sosyal", "cover": "/uploads/ornek/quiz-night.jpg", "gallery": [],
+      "body": "Saat, mekân ve ücret bilgisi eklenince yayına alınacak.",
+      "includes": [], "bring": [], "faq": [], "instructors": [], "level": "herkes", "age": "18+", "duration": "",
+      "sessions": [{"id": "s1", "date": "2026-10-03", "start": "20:00", "end": "", "venue": "", "place": "", "capacity": 0, "status": "acik", "note": ""}],
+      "package": false, "capacity": 0,
+      "tickets": [],
+      "pay_methods": ["havale"], "pay_link": "",
+      "reg_open": true, "reg_close_hours": 0, "max_per_order": 6, "waitlist": false, "approval": false,
+      "show_left": false, "show_attendees": true, "comments": true, "featured": false, "pinned": false,
+      "cancel_policy": "", "created": "2026-10-01 10:00", "updated": "2026-10-01 10:00"
+    },
+    {
+      "id": "e-hamak", "slug": "hamak-yoga-parfum-workshop", "status": "yayinda", "title": "Hamak Yoga & Parfüm Workshop",
+      "summary": "Hamak yoga ile bedeni gevşetip ardından kendi parfümümüzü tasarladığımız bir gün.",
+      "category": "iyi-olus", "cover": "/uploads/ornek/hamak-yoga.jpg", "gallery": [],
+      "body": "Hamak yoga ile bedenimizi gevşettik, ardından esansların dünyasına girip kendi parfümümüzü tasarladık. Katılan herkese teşekkür ederiz.",
+      "includes": [], "bring": [], "faq": [], "instructors": ["i-muleyke"], "level": "herkes", "age": "", "duration": "",
+      "sessions": [{"id": "s1", "date": "2026-09-12", "start": "11:00", "end": "14:00", "venue": "", "place": "Silivri", "capacity": 0, "status": "acik", "note": ""}],
+      "package": false, "capacity": 0,
+      "tickets": [],
+      "pay_methods": ["havale"], "pay_link": "",
+      "reg_open": false, "reg_close_hours": 0, "max_per_order": 4, "waitlist": false, "approval": false,
+      "show_left": false, "show_attendees": true, "comments": true, "featured": false, "pinned": false,
+      "cancel_policy": "", "created": "2026-09-01 10:00", "updated": "2026-09-01 10:00"
+    },
+    {
+      "id": "e-yoga", "slug": "gun-batimi-yogasi", "status": "yayinda", "title": "Gün Batımı Yogası",
+      "summary": "ÖRNEK ETKİNLİK: Aynı etkinliğin farklı tarih ve mekânlarda yapılmasını gösterir. Panelden silebilirsiniz.",
+      "category": "iyi-olus", "cover": "/uploads/ornek/gun-batimi-yogasi.jpg", "gallery": [],
+      "body": "Bu bir örnek etkinliktir. Aynı etkinliğin birden fazla tarihte ve farklı mekânlarda yapılabildiğini, her oturumun kendi kontenjanı olduğunu gösterir.\n\nHafta sonu akşamüstü, gün batarken nefes ve esneme odaklı sakin bir akış.",
+      "includes": ["Bitki çayı ikramı"], "bring": ["Yoga matı", "Su", "İnce bir hırka"], "faq": [], "instructors": ["i-muleyke"], "level": "herkes", "age": "", "duration": "75 dakika",
+      "sessions": [
+        {"id": "s1", "date": "2026-10-10", "start": "17:30", "end": "18:45", "venue": "v-sahil", "place": "", "capacity": 25, "status": "acik", "note": ""},
+        {"id": "s2", "date": "2026-10-17", "start": "17:15", "end": "18:30", "venue": "v-eser", "place": "", "capacity": 12, "status": "acik", "note": "Otel bahçesinde"},
+        {"id": "s3", "date": "2026-10-24", "start": "17:00", "end": "18:15", "venue": "v-sahil", "place": "", "capacity": 25, "status": "acik", "note": ""}
+      ],
+      "package": false, "capacity": 0,
+      "tickets": [{"id": "t1", "name": "Katılım", "price": 0, "seats": 1, "limit": 0, "until": "", "note": ""}],
+      "pay_methods": [], "pay_link": "",
+      "reg_open": true, "reg_close_hours": 1, "max_per_order": 2, "waitlist": true, "approval": false,
+      "show_left": true, "show_attendees": true, "comments": true, "featured": false, "pinned": false,
+      "cancel_policy": "", "created": "2026-10-01 10:00", "updated": "2026-10-01 10:00"
+    },
+    {
+      "id": "e-seramik", "slug": "seramik-baslangic-kursu", "status": "yayinda", "title": "Seramik Başlangıç Kursu",
+      "summary": "ÖRNEK ETKİNLİK: Dört buluşmalık, tek kayıtla katılınan bir kursu ve erken kayıt fiyatını gösterir.",
+      "category": "kurs", "cover": "/uploads/ornek/seramik-kursu.jpg", "gallery": [],
+      "body": "Bu bir örnek etkinliktir. Tek kayıtla dört buluşmanın tamamına katılınan kurs yapısını, erken kayıt bileti ve küçük grup kontenjanını gösterir.\n\n## Program\n\n- 1. hafta: Çamuru tanımak, el ile şekillendirme\n- 2. hafta: Bardak ve kase\n- 3. hafta: Yüzey ve doku\n- 4. hafta: Sırlama",
+      "includes": ["Çamur, sır ve iki kez fırınlama", "Önlük ve tüm aletler"], "bring": ["Kirlenebilecek kıyafet"], "faq": [{"q": "Bir haftayı kaçırırsam ne olur?", "a": "Kaçırdığınız buluşmayı bir sonraki dönemin aynı haftasında telafi edebilirsiniz."}],
+      "instructors": [], "level": "baslangic", "age": "18+", "duration": "4 hafta · haftada 2,5 saat",
+      "sessions": [
+        {"id": "s1", "date": "2026-11-07", "start": "13:00", "end": "15:30", "venue": "v-poti", "place": "", "capacity": 0, "status": "acik", "note": "1. hafta"},
+        {"id": "s2", "date": "2026-11-14", "start": "13:00", "end": "15:30", "venue": "v-poti", "place": "", "capacity": 0, "status": "acik", "note": "2. hafta"},
+        {"id": "s3", "date": "2026-11-21", "start": "13:00", "end": "15:30", "venue": "v-poti", "place": "", "capacity": 0, "status": "acik", "note": "3. hafta"},
+        {"id": "s4", "date": "2026-11-28", "start": "13:00", "end": "15:30", "venue": "v-poti", "place": "", "capacity": 0, "status": "acik", "note": "4. hafta"}
+      ],
+      "package": true, "capacity": 8,
+      "tickets": [
+        {"id": "t1", "name": "Erken kayıt", "price": 3600, "seats": 1, "limit": 4, "until": "2026-10-20", "note": "20 Ekim'e kadar"},
+        {"id": "t2", "name": "Standart", "price": 4200, "seats": 1, "limit": 0, "until": "", "note": ""}
+      ],
+      "pay_methods": ["havale", "link"], "pay_link": "",
+      "reg_open": true, "reg_close_hours": 48, "max_per_order": 2, "waitlist": true, "approval": true,
+      "show_left": true, "show_attendees": true, "comments": true, "featured": false, "pinned": false,
+      "cancel_policy": "", "created": "2026-10-01 10:00", "updated": "2026-10-01 10:00"
+    }
+  ]
+}

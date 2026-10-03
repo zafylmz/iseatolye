@@ -1,0 +1,95 @@
+{
+  "brand": {
+    "name": "İSE ATÖLYE",
+    "logo_text": "İSE ATÖLYE",
+    "logo": "",
+    "tagline": "Silivri'de sanat, üretim ve iyi oluş atölyeleri",
+    "description": "İse Atölye; Silivri ve çevresinde her hafta farklı bir mekânda sanat, tasarım, üretim ve iyi oluş odaklı atölyeler ve etkinlikler düzenler.",
+    "footer_text": "Silivri ve çevresinde her hafta farklı bir mekânda; üretmek, yavaşlamak ve birlikte güzel anılar biriktirmek için.",
+    "og_image": "/og.jpg"
+  },
+  "home": {
+    "eyebrow": "Silivri · Atölye ve etkinlikler",
+    "title": "Biraz yavaşla, birlikte üret.",
+    "subtitle": "Her hafta farklı bir mekânda sanat, tasarım ve iyi oluş odaklı atölyeler. Gel, elinle bir şey yap, yeni insanlarla tanış.",
+    "hero_image": "/uploads/ornek/hero.jpg",
+    "events_title": "Yaklaşan etkinlikler",
+    "calendar_title": "Bu ay neler var?",
+    "calendar_text": "Takvime dokunun, ayın tüm etkinliklerini büyük ekranda görün.",
+    "steps_title": "Nasıl katılırım?",
+    "steps": [
+      {"title": "Etkinliğini seç", "text": "Takvimden ya da etkinlik listesinden sana uygun atölyeyi, tarihi ve mekânı seç."},
+      {"title": "Üye ol, yerini ayırt", "text": "Ücretsiz üyeliğinle birkaç adımda kaydını oluştur. Kontenjan sınırlıysa yerin hemen ayrılır."},
+      {"title": "Gel, üret, paylaş", "text": "Malzemeler bizden. Etkinlikten sonra yorumunu yaz, katıldığın etkinlikler profilinde birikir."}
+    ],
+    "quote": "Çünkü bizce üretmek, bazen yalnızca bir şey ortaya çıkarmak değil; biraz yavaşlamak, paylaşmak ve birlikte güzel anılar biriktirmektir.",
+    "community_title": "Topluluktan",
+    "community_text": "Etkinliklere yorum yazın, katılmayı düşündüğünüz etkinlikleri işaretleyin, diğer katılımcıların profillerine göz atın."
+  },
+  "stats": [
+    {"value": "Her hafta", "label": "yeni bir etkinlik"},
+    {"value": "6", "label": "farklı eğitmen"},
+    {"value": "Yüzlerce", "label": "katılımcı"}
+  ],
+  "about": {
+    "title": "İSE ATÖLYE",
+    "lead": "Silivri ve çevresinde düzenli olarak her hafta farklı etkinlikler gerçekleştiriyoruz.",
+    "body": "Silivri ve çevresinde düzenli olarak her hafta farklı etkinlikler gerçekleştiriyoruz. Trendleri takip etmek yerine içimize sinen üretimlere odaklanıyor; her etkinlikte insanların hem üretmesini hem de bağ kurmasını önemsiyoruz.\n\nİse Atölye, kurucusu Müleyke Çimen öncülüğünde ve 6 farklı eğitmenin katkısıyla büyümeye devam ediyor. Yoga etkinliklerinden yaratıcı workshoplara kadar uzanan bu yolculukta amacımız; insanlara sadece bir etkinlik değil, kendilerini iyi hissedecekleri bir deneyim alanı sunmak.\n\nÇünkü bizce üretmek, bazen yalnızca bir şey ortaya çıkarmak değil; biraz yavaşlamak, paylaşmak ve birlikte güzel anılar biriktirmektir.",
+    "image": "/uploads/ornek/hakkimizda.jpg",
+    "founder": "Müleyke Çimen",
+    "founder_title": "Kurucu",
+    "gallery": ["/uploads/ornek/galeri-1.jpg", "/uploads/ornek/galeri-2.jpg", "/uploads/ornek/galeri-3.jpg", "/uploads/ornek/galeri-4.jpg", "/uploads/ornek/galeri-5.jpg", "/uploads/ornek/galeri-6.jpg"]
+  },
+  "corporate": {
+    "title": "Kurumsal",
+    "lead": "Ekibiniz için birlikte üretmeye, yavaşlamaya ve bağ kurmaya alan açan atölyeler.",
+    "body": "İse Atölye, bugüne kadar gerçekleştirdiği atölye ve etkinliklerle her hafta farklı bir mekânda katılımcıları sanat, tasarım ve üretim odaklı deneyimlerle buluşturmaktadır.\n\nYalnızca bireysel katılımcılarla değil; Ülker, Starbucks, B/S/H gibi birçok kurumsal marka ve farklı sektörlerden kurumlarla da iş birlikleri gerçekleştirerek geniş bir kitleye ulaşmaktadır.\n\nFarklı lokasyonlarda düzenlenen etkinliklerimiz, her yaş grubundan yüzlerce katılımcının bir araya geldiği yaratıcı ve keyifli deneyimlere dönüşmektedir.",
+    "image": "/uploads/ornek/kurumsal.jpg",
+    "brands": ["Ülker", "Starbucks", "B/S/H"],
+    "services_title": "Hizmet alanları",
+    "services": [
+      {"icon": "nilufer", "title": "İyi oluş (wellbeing)", "text": "Yoğun iş temposuna kısa bir mola vererek çalışanın zihinsel rahatlama ve motivasyon kazanmasını destekler."},
+      {"icon": "ekip", "title": "Ekip içi bağ kurma", "text": "Çalışanların birlikte üretim yaparak iletişimlerini güçlendirmesine ve ekip uyumunun artmasına katkı sağlar."},
+      {"icon": "isik", "title": "Yaratıcılık", "text": "Farklı deneyim alanlarıyla çalışanların yaratıcı düşünme becerilerini ve üretken bakış açılarını geliştirmeyi hedefler."}
+    ],
+    "process_title": "Nasıl çalışıyoruz?",
+    "process": [
+      {"title": "Tanışma", "text": "Ekibinizin sayısını, hedefinizi ve tarih aralığınızı konuşuyoruz."},
+      {"title": "Atölye önerisi", "text": "Size uygun atölye, mekân ve süre seçenekleriyle bir teklif hazırlıyoruz."},
+      {"title": "Uygulama", "text": "Tüm malzemeler ve eğitmenlerle etkinliği ofisinizde ya da seçtiğimiz mekânda gerçekleştiriyoruz."}
+    ],
+    "contact_name": "Müleyke Çimen",
+    "contact_phone": "+90 507 542 87 98",
+    "contact_email": "iseatolye@gmail.com"
+  },
+  "contact": {
+    "heading": "Bir sorunuz mu var? Bize yazın.",
+    "address": "Silivri / İstanbul",
+    "hours": "Pazartesi – Cuma 09:00 – 18:00",
+    "phone": "+90 507 542 87 98",
+    "email": "iseatolye@gmail.com",
+    "whatsapp": "905075428798"
+  },
+  "socials": [
+    {"label": "Instagram", "url": "https://www.instagram.com/iseatolye"},
+    {"label": "YouTube", "url": "https://www.youtube.com/@iseatolye"},
+    {"label": "LinkedIn", "url": "https://www.linkedin.com/company/iseatolye/"},
+    {"label": "WhatsApp Kanalı", "url": "https://www.whatsapp.com/channel/0029Vb8BM1j8KMqc9ILw1H3B"}
+  ],
+  "announcement": {"on": false, "text": "", "url": ""},
+  "settings": {
+    "site_url": "https://www.iseatolye.com.tr",
+    "require_login": true,
+    "comment_moderation": false,
+    "mail_enabled": true,
+    "mail_from": "",
+    "notify_email": "",
+    "bank_name": "",
+    "bank_holder": "",
+    "bank_iban": "",
+    "payment_note": "Ödemenizi yaptıktan sonra açıklamaya katılım kodunuzu yazın. Ödemeniz onaylandığında kaydınız kesinleşir ve size bilgi verilir.",
+    "cancel_policy": "Etkinlikten 48 saat öncesine kadar yapılan iptallerde ücret iadesi yapılır ya da başka bir etkinliğe aktarılır. Daha geç iptallerde iade yapılamaz; yerinize bir arkadaşınızı gönderebilirsiniz.",
+    "terms": "## Kayıt ve kontenjan\n\nKontenjanı sınırlı etkinliklerde yeriniz kaydınızı oluşturduğunuz anda ayrılır. Ücretli etkinliklerde ödemeniz onaylanınca kaydınız kesinleşir. Ödeme yapılmayan kayıtlar, etkinlikten önce iptal edilebilir.\n\n## İptal ve iade\n\nEtkinlikten 48 saat öncesine kadar yapılan iptallerde ücret iadesi yapılır ya da başka bir etkinliğe aktarılır. Daha geç iptallerde iade yapılamaz; yerinize bir arkadaşınızı gönderebilirsiniz.\n\n## Etkinlik değişiklikleri\n\nHava durumu, mekân ya da eğitmen kaynaklı zorunlu durumlarda etkinliğin tarihi veya yeri değişebilir. Böyle bir durumda kayıtlı katılımcılara haber verilir; yeni tarihe katılamayanlara ücret iadesi yapılır.\n\n## Fotoğraf ve video\n\nEtkinliklerde paylaşım amacıyla fotoğraf ve video çekilebilir. Görünmek istemiyorsanız lütfen etkinlik başında eğitmene söyleyin.\n\n## Topluluk kuralları\n\nYorumlarda saygılı bir dil kullanın. Reklam, hakaret ya da kişisel bilgi içeren yorumlar yayından kaldırılır ve tekrarlayan üyelikler kapatılabilir.",
+    "reg_success_note": "Etkinlik gününden önce size hatırlatma yapacağız. Sorularınız için WhatsApp'tan yazabilirsiniz."
+  }
+}

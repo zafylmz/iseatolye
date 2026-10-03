@@ -1,0 +1,66 @@
+İSE ATÖLYE · KURULUM NOTLARI
+============================
+
+Site düz PHP 8 + JSON dosyalarıyla çalışır. Veritabanı, eklenti ya da kurulum sihirbazı yoktur.
+
+1) İLK KURULUM (WordPress'ten geçiş)
+-----------------------------------
+1. cPanel > Yedekleme ile mevcut WordPress sitesinin tam yedeğini alın.
+2. public_html içindeki WordPress dosyalarını /home/KULLANICI/yedek-wordpress-YYYYAAGGSSDD/ klasörüne taşıyın
+   (silmeyin; bir sorun olursa geri dönebilirsiniz).
+3. Bu zip'in içindekileri public_html'e çıkarın (.htaccess dahil; gizli dosyaları gösterin).
+4. Klasör izinleri: data/ ve uploads/ yazılabilir olmalı (755 yeterli).
+5. https://www.iseatolye.com.tr/yonetim/ adresini açın; ilk girişte panel şifresini siz belirlersiniz.
+6. PHP sürümü: cPanel > "MultiPHP Manager" ile 8.1 veya üstü seçin.
+
+Eski WordPress adresleri (/etn/..., /etkinlik-takvimi/, /magaza/) yeni sayfalara kendiliğinden yönlenir.
+
+2) GÜNCELLEMELERDE ÇOK ÖNEMLİ
+-----------------------------
+Canlı sitedeki data/ ve uploads/ klasörlerinin ÜZERİNE ASLA YAZMAYIN.
+Üyeler, katılımlar, yorumlar, panelde yaptığınız tüm değişiklikler ve yüklediğiniz fotoğraflar oradadır.
+Kod güncellemesinde yalnızca data/ ve uploads/ dışındaki dosyalar yüklenir; önce
+/home/KULLANICI/yedek-iseatolye-YYYYAAGGSSDD/ klasörüne yedek alınır. Canlı sunucu her zaman asıl kaynaktır.
+
+Panel her kayıtta data/yedek/ altına otomatik kopya alır (her dosyadan son 20 kopya).
+
+Güncelleme zip'leri (iseatolye-guncelleme-*.zip) data/ ve uploads/ klasörlerini İÇERMEZ; public_html'e çıkarıp
+mevcut dosyaların üzerine yazmanız yeterlidir.
+
+GALERİ: Panel > Galeri sitedeki bütün fotoğrafları gösterir. Etkinlik, blog, mekan ve sayfalarda görsel seçerken
+aynı galeri açılır; yeni fotoğraflar oradan da yüklenebilir. Fotoğraflar artık bir alandan kaldırıldığında silinmez,
+yalnızca Galeri'den silinir. Etkinlik galerileri ve "sitede göster" işaretli albümler /galeri/ sayfasında görünür.
+
+VERİTABANI: Panel > Sistem kontrolü'nden MySQL'e bağlanınca üyeler, katılımlar, yorumlar, ilgilenenler ve mesajlar
+veritabanında tutulur (tablolar: ise_belgeler, ise_yedekler). Bağlantı bilgisi data/db.php dosyasındadır; bu dosyayı
+silmeyin. Etkinlikler, sayfa içerikleri ve ayarlar dosyada kalır. Her kayıt günde bir kez ve panelden yapılan toplu
+işlemlerden önce ise_yedekler tablosuna yedeklenir. cPanel yedekleri veritabanını da kapsar.
+
+E-POSTA (SMTP): Sunucuda PHP mail() kapalıysa Panel > Ayarlar > "E-posta hesabı (SMTP)" bölümüne cPanel'deki
+e-posta hesabının bilgilerini girin (sunucu mail.iseatolye.com.tr, port 465, tam e-posta adresi ve şifresi).
+Kaydederken deneme e-postası gönderilir; bilgiler data/smtp.php dosyasında saklanır, bu dosyayı silmeyin.
+E-posta gönderilemese bile üyelik ve kayıt işlemleri tamamlanır; hata Sistem kontrolü'nde görünür.
+
+SİSTEM KONTROLÜ: Bir şey çalışmazsa Panel > Sistem kontrolü sayfası sorunun nerede olduğunu ve son hataları gösterir.
+
+3) İLK YAPILACAKLAR (panelden)
+------------------------------
+- Ayarlar > Havale / EFT: banka, alıcı adı ve IBAN.
+- Ayarlar > E-posta hesabı (SMTP): cPanel'de açtığınız e-posta hesabının bilgilerini girip kaydedin;
+  deneme e-postası otomatik gönderilir.
+- Etkinlikler: fiyat ve kontenjanları kontrol edin. "Gün Batımı Yogası" ve "Seramik Başlangıç Kursu"
+  sistemin yeteneklerini göstermek için eklenmiş ÖRNEK etkinliklerdir; silin ya da kendi etkinliğinize çevirin.
+  "Quiz & Cocktail Night" eksik bilgiler nedeniyle taslakta bekliyor.
+- Görseller: uploads/ornek/ altındaki görseller yer tutucudur ("ÖRNEK GÖRSEL" yazılı). Etkinlik, mekan,
+  Sayfalar bölümlerinden gerçek fotoğrafları yükleyin.
+- Sayfalar > Logo: logo hazır olunca yükleyin; o zamana kadar "İSE ATÖLYE" yazısı görünür.
+
+4) ŞİFREMİ UNUTTUM
+------------------
+Panel şifresi: cPanel Dosya Yöneticisi'nde data/auth.php dosyasını silin ve /yonetim/ adresini açın. Panel yeni şifre
+ister ve güvenlik için kurulum anahtarı sorar: data/kurulum-anahtari.txt dosyasındaki 8 karakteri yazın.
+Üye şifreleri: üyeler "Şifremi unuttum" ile e-postalarına gelen bağlantıdan yeniler.
+
+5) KONUM VERİSİ (istatistikler için, isteğe bağlı)
+--------------------------------------------------
+Panel > İstatistikler > "Konum verisini güncelle" ayda bir çalıştırılırsa ziyaretçilerin şehirleri görünür.

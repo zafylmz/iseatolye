@@ -1,0 +1,10 @@
+# Canlı veriler sunucuda kalır, depoya girmez
+data/*
+!data/.htaccess
+uploads/*
+!uploads/.htaccess
+!uploads/ornek/
+error_log
+*.log
+*.zip
+.DS_Store
