@@ -165,8 +165,8 @@ include __DIR__ . '/inc/header.php';
             <label><input type="radio" name="inv_type" value="kurumsal" data-inv-type<?= $corp ? ' checked' : '' ?>><span>Şirket adına</span></label>
           </div>
           <div data-inv-group="bireysel"<?= $corp ? ' hidden' : '' ?>>
-            <label class="field">T.C. kimlik no <span class="opt-l">(isteğe bağlı)</span><input name="inv_tckn" value="<?= e($invOld['tckn']) ?>" inputmode="numeric" pattern="\d{11}" maxlength="11" autocomplete="off"></label>
-            <p class="muted small">Fatura <?= $me ? e($me['name']) : 'yukarıdaki ad soyad' ?> adına kesilir. T.C. kimlik numaranızı yazmazsanız fatura T.C. kimlik no olmadan kesilir.</p>
+            <label class="field">T.C. kimlik no<input name="inv_tckn" value="<?= e($invOld['tckn']) ?>" inputmode="numeric" pattern="\d{11}" maxlength="11" autocomplete="off"></label>
+            <p class="muted small">Fatura <?= $me ? e($me['name']) : 'yukarıdaki ad soyad' ?> adına kesilir. e-Arşiv fatura için T.C. kimlik numaranız gereklidir.</p>
           </div>
           <div class="grid2" data-inv-group="kurumsal"<?= !$corp ? ' hidden' : '' ?>>
             <label class="field">Şirket unvanı<input name="inv_title" value="<?= e($invOld['title']) ?>" maxlength="160" autocomplete="organization"></label>

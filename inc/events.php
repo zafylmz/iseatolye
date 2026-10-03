@@ -30,6 +30,8 @@ const PAY_METHODS = [
   'yerinde' => 'Etkinlikte ödeme',
   'link' => 'Online ödeme bağlantısı',
 ];
+// Sitede seçilebilen yöntemler. "Etkinlikte ödeme" kaldırıldı; eski kayıtlarda adı görünsün diye PAY_METHODS'ta duruyor.
+const PAY_METHODS_ACTIVE = ['havale', 'link'];
 const LEVELS = ['' => 'Belirtilmemiş', 'herkes' => 'Herkes için', 'baslangic' => 'Başlangıç', 'orta' => 'Orta seviye', 'ileri' => 'İleri seviye'];
 
 function catalog(): array {
@@ -176,7 +178,7 @@ function price_short(array $ev): string {
 
 function pay_methods(array $ev): array {
   if (event_is_free($ev)) return [];
-  $m = array_values(array_intersect(array_keys(PAY_METHODS), (array) ($ev['pay_methods'] ?? ['havale'])));
+  $m = array_values(array_intersect(PAY_METHODS_ACTIVE, (array) ($ev['pay_methods'] ?? ['havale'])));
   if (in_array('link', $m, true) && trim($ev['pay_link'] ?? '') === '') $m = array_values(array_diff($m, ['link']));
   return $m ?: ['havale'];
 }
@@ -451,14 +453,15 @@ function tckn_valid(string $n): bool {
 }
 
 // Katılım formundan gelen fatura bilgisi.
-// Bireysel: kayıttaki ad soyada kesilir; T.C. kimlik no isteğe bağlı (yoksa e-Arşivde 11111111111 yazılır), adres zorunlu.
+// Bireysel: kayıttaki ad soyada kesilir; T.C. kimlik no ve adres zorunlu.
 // Kurumsal: unvan, vergi dairesi, vergi no ve adres zorunlu.
 function invoice_from_post(array &$errors): array {
   $f = [];
   foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'tckn' => 11, 'address' => 300] as $k => $max) $f[$k] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string) ($_POST['inv_' . $k] ?? ''))), 0, $max);
   if (mb_strlen($f['address']) < 3) $errors[] = 'Fatura adresinizi yazın (il ve ilçe yeterli).';
   if (($_POST['inv_type'] ?? '') !== 'kurumsal') {
-    if ($f['tckn'] !== '' && !tckn_valid($f['tckn'])) $errors[] = 'T.C. kimlik numarası geçerli görünmüyor. Kontrol edin ya da boş bırakın.';
+    if ($f['tckn'] === '') $errors[] = 'Fatura için T.C. kimlik numaranızı yazın.';
+    elseif (!tckn_valid($f['tckn'])) $errors[] = 'T.C. kimlik numarası geçerli görünmüyor, kontrol edin.';
     return ['type' => 'bireysel', 'tax_no' => $f['tckn'], 'address' => $f['address']];
   }
   if ($f['title'] === '' || $f['tax_office'] === '') $errors[] = 'Şirket adına fatura için unvan ve vergi dairesini yazın.';

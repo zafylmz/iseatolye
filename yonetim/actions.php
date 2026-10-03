@@ -93,7 +93,7 @@ switch ($action) {
       $ev['package'] = !empty($_POST['package']);
       $ev['capacity'] = post_int('capacity');
       $ev['tickets'] = $tickets;
-      $ev['pay_methods'] = array_values(array_intersect((array) ($_POST['pay_methods'] ?? []), array_keys(PAY_METHODS)));
+      $ev['pay_methods'] = array_values(array_intersect((array) ($_POST['pay_methods'] ?? []), PAY_METHODS_ACTIVE));
       $ev['pay_link'] = filter_var(post('pay_link'), FILTER_VALIDATE_URL) ? post('pay_link') : '';
       foreach (['reg_open', 'waitlist', 'approval', 'show_left', 'show_attendees', 'comments', 'featured', 'pinned'] as $k) $ev[$k] = !empty($_POST[$k]);
       $ev['reg_close_hours'] = post_int('reg_close_hours', 0, 24 * 30);
@@ -328,6 +328,14 @@ switch ($action) {
     backup_file(REGS_FILE);
     regs_update(function (array &$d) use ($id) { $d['regs'] = array_values(array_filter($d['regs'], fn($r) => $r['id'] !== $id)); });
     flash('Kayıt silindi.');
+    redirect($back ?: './?s=katilimlar');
+
+  case 'kayit-toplu-sil':
+    $ids = array_map('strval', (array) ($_POST['ids'] ?? []));
+    if (!$ids) { flash('Silinecek kayıt seçmediniz.', 'err'); redirect($back ?: './?s=katilimlar'); }
+    backup_file(REGS_FILE);
+    $n = regs_update(function (array &$d) use ($ids) { $before = count($d['regs']); $d['regs'] = array_values(array_filter($d['regs'], fn($r) => !in_array($r['id'], $ids, true))); return $before - count($d['regs']); });
+    flash($n . ' kayıt silindi.');
     redirect($back ?: './?s=katilimlar');
 
   case 'kayit-ekle':

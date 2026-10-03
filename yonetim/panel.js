@@ -320,3 +320,14 @@
   // Grafikler en yeni güne kaydırılmış açılsın
   $$('.chart-wrap').forEach((el) => { el.scrollLeft = el.scrollWidth; });
 })();
+
+// Katılımlar: toplu seçim ve silme
+(() => {
+  const all = document.querySelector('[data-regsel-all]');
+  const btn = document.querySelector('[data-regsel-btn]');
+  const boxes = [...document.querySelectorAll('[data-regsel]')];
+  if (!btn || !boxes.length) return;
+  const sync = () => { const n = boxes.filter((b) => b.checked).length; btn.disabled = !n; btn.textContent = n ? 'Seçilenleri sil (' + n + ')' : 'Seçilenleri sil'; if (all) all.checked = n === boxes.length; };
+  boxes.forEach((b) => b.addEventListener('change', sync));
+  if (all) all.addEventListener('change', () => { boxes.forEach((b) => { b.checked = all.checked; }); sync(); });
+})();
