@@ -967,10 +967,6 @@ body.has-modal { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .js [data-reveal] { opacity: 1; transition: none; } }
 
 /* Katılım formu: şirket adına fatura */
-.invbox { border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; background: var(--paper, transparent); }
-.invbox summary { list-style: none; cursor: pointer; }
-.invbox summary::-webkit-details-marker { display: none; }
-.invbox[open] summary { margin-bottom: 6px; }
-.invbox .grid2 { margin-top: 12px; }
+.inv-type { margin-bottom: 14px; }
 .footer__web { display: inline-flex; align-items: center; gap: 6px; }
 .footer__web svg { display: block; flex: none; }

@@ -431,8 +431,8 @@ function invoice_due(array $r): bool {
 function invoice_corporate(array $r): bool { return trim((string) ($r['invoice']['title'] ?? '')) !== ''; }
 
 function invoice_buyer(array $r): string {
-  if (!invoice_corporate($r)) return $r['name'];
-  $i = $r['invoice'];
+  $i = $r['invoice'] ?? [];
+  if (!invoice_corporate($r)) return $r['name'] . (trim((string) ($i['tax_no'] ?? '')) !== '' ? ' · TC ' . $i['tax_no'] : '');
   return $i['title'] . ' · ' . $i['tax_office'] . ' VD · ' . $i['tax_no'];
 }
 
@@ -442,12 +442,26 @@ function vat_split(float $gross): array {
   return [$net, round($gross - $net, 2), $rate];
 }
 
-// Katılım formundan gelen kurumsal fatura bilgisi. Boşsa bireysel fatura (kayıttaki ad soyada) kesilir.
+function tckn_valid(string $n): bool {
+  if (!preg_match('/^[1-9]\d{10}$/', $n)) return false;
+  $d = array_map('intval', str_split($n));
+  $odd = $d[0] + $d[2] + $d[4] + $d[6] + $d[8];
+  $even = $d[1] + $d[3] + $d[5] + $d[7];
+  return (($odd * 7 - $even) % 10 + 10) % 10 === $d[9] && array_sum(array_slice($d, 0, 10)) % 10 === $d[10];
+}
+
+// Katılım formundan gelen fatura bilgisi.
+// Bireysel: kayıttaki ad soyada kesilir; T.C. kimlik no isteğe bağlı (yoksa e-Arşivde 11111111111 yazılır), adres zorunlu.
+// Kurumsal: unvan, vergi dairesi, vergi no ve adres zorunlu.
 function invoice_from_post(array &$errors): array {
   $f = [];
-  foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'address' => 300] as $k => $max) $f[$k] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string) ($_POST['inv_' . $k] ?? ''))), 0, $max);
-  if (empty($_POST['inv_corp']) || implode('', $f) === '') return [];
-  if ($f['title'] === '' || $f['tax_office'] === '' || $f['address'] === '') $errors[] = 'Şirket adına fatura için unvan, vergi dairesi ve fatura adresini yazın.';
-  if (!preg_match('/^\d{10,11}$/', $f['tax_no'])) $errors[] = 'Vergi numarası 10, T.C. kimlik numarası 11 haneli olmalı.';
-  return $f;
+  foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'tckn' => 11, 'address' => 300] as $k => $max) $f[$k] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string) ($_POST['inv_' . $k] ?? ''))), 0, $max);
+  if (mb_strlen($f['address']) < 3) $errors[] = 'Fatura adresinizi yazın (il ve ilçe yeterli).';
+  if (($_POST['inv_type'] ?? '') !== 'kurumsal') {
+    if ($f['tckn'] !== '' && !tckn_valid($f['tckn'])) $errors[] = 'T.C. kimlik numarası geçerli görünmüyor. Kontrol edin ya da boş bırakın.';
+    return ['type' => 'bireysel', 'tax_no' => $f['tckn'], 'address' => $f['address']];
+  }
+  if ($f['title'] === '' || $f['tax_office'] === '') $errors[] = 'Şirket adına fatura için unvan ve vergi dairesini yazın.';
+  if (!preg_match('/^\d{10,11}$/', $f['tax_no'])) $errors[] = 'Vergi numarası 10, şahıs şirketlerinde T.C. kimlik numarası 11 haneli olmalı.';
+  return ['type' => 'kurumsal', 'title' => $f['title'], 'tax_office' => $f['tax_office'], 'tax_no' => $f['tax_no'], 'address' => $f['address']];
 }

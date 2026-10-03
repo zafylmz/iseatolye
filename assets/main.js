@@ -403,8 +403,12 @@
   }
 })();
 
-// Şirket adına fatura kutusu: onay işareti ile açık/kapalı durumu aynı kalsın
-document.querySelectorAll('details.invbox').forEach((d) => {
-  const cb = d.querySelector('[data-inv-toggle]');
-  if (cb) d.addEventListener('toggle', () => { cb.checked = d.open; });
+// Fatura türü: bireysel / şirket adına alanlarını değiştir
+document.querySelectorAll('[data-inv]').forEach((box) => {
+  const sync = () => {
+    const t = (box.querySelector('[data-inv-type]:checked') || {}).value || 'bireysel';
+    box.querySelectorAll('[data-inv-group]').forEach((g) => { g.hidden = g.dataset.invGroup !== t; });
+  };
+  box.querySelectorAll('[data-inv-type]').forEach((r) => r.addEventListener('change', sync));
+  sync();
 });

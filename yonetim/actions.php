@@ -255,7 +255,7 @@ switch ($action) {
           $r['inv_date'] = $r['inv_no'] === '' ? '' : (preg_match('/^\d{4}-\d{2}-\d{2}$/', post('inv_date')) ? post('inv_date') : date('Y-m-d'));
           $inv = [];
           foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'address' => 300] as $k => $max) $inv[$k] = mb_substr(trim(post('inv_' . $k)), 0, $max);
-          $r['invoice'] = $inv['title'] !== '' ? $inv : [];
+          $r['invoice'] = $inv['title'] !== '' ? ['type' => 'kurumsal'] + $inv : (implode('', $inv) !== '' ? ['type' => 'bireysel', 'tax_no' => $inv['tax_no'], 'address' => $inv['address']] : []);
         }
         foreach (['name' => 80, 'phone' => 30, 'others' => 400] as $k => $max) if (isset($_POST[$k])) $r[$k] = mb_substr(post($k), 0, $max);
         if (isset($_POST['email']) && ($r['user'] ?? '') === '' && filter_var(post('email'), FILTER_VALIDATE_EMAIL)) $r['email'] = post('email');
