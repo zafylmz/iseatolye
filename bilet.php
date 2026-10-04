@@ -3,6 +3,7 @@
 require_once __DIR__ . '/inc/bootstrap.php';
 require_once __DIR__ . '/inc/events.php';
 require_once __DIR__ . '/inc/icons.php';
+require_once __DIR__ . '/inc/iyzico.php';
 $c = content();
 $r = reg_by_code((string) ($_GET['kod'] ?? ''));
 $me = current_user();
@@ -34,6 +35,9 @@ include __DIR__ . '/inc/header.php';
         <p class="muted"><?= $st === 'yedek' ? 'Yer açılırsa size e-posta ile haber vereceğiz.' : ($st === 'beklemede' ? (!$r['paid'] && $r['total'] > 0 && $r['method'] !== 'yerinde' ? 'Ödemeniz onaylandığında kaydınız kesinleşecek. Yeriniz şimdiden ayrıldı.' : 'Onaylandığında size bilgi vereceğiz. Yeriniz şimdiden ayrıldı.') : e((string) setting('reg_success_note', ''))) ?></p>
       </div>
     <?php endif; ?>
+    <?php $pm = (string) ($_GET['odeme'] ?? ''); if ($pm === 'ok' && $r['paid']): ?><p class="notice notice--ok" role="status"><?= icon('onay') ?>Ödemeniz alındı, kaydınız kesinleşti. Teşekkür ederiz!</p>
+    <?php elseif ($pm === 'hata' && !$r['paid']): ?><p class="notice notice--err" role="alert"><?= icon('bilgi') ?>Ödeme tamamlanamadı, kartınızdan ücret alınmadı. Aşağıdan tekrar deneyebilir ya da başka bir yöntem seçebilirsiniz.</p>
+    <?php elseif ($pm === 'kapali' && !$r['paid']): ?><p class="notice notice--warn" role="alert"><?= icon('bilgi') ?>Kartla ödeme şu an kullanılamıyor. Lütfen biraz sonra tekrar deneyin ya da havale ile ödeyin.</p><?php endif; ?>
     <?php if ($flash): ?><p class="notice notice--<?= e($flash[1]) ?>"><?= e($flash[0]) ?></p><?php endif; ?>
 
     <div class="ticket">
@@ -58,6 +62,12 @@ include __DIR__ . '/inc/header.php';
     <?php if ($st !== 'iptal' && $st !== 'yedek' && !$r['paid'] && $r['total'] > 0): ?>
       <section class="pay">
         <h2 class="h3">Ödeme</h2>
+        <?php if (iyzico_on()): ?>
+          <div class="pay__card">
+            <p class="muted"><?= $r['method'] === 'iyzico' ? 'Kartla ödemeniz henüz tamamlanmadı.' : 'İsterseniz ücreti hemen kartınızla da ödeyebilirsiniz.' ?> Ödeme iyzico güvenli ödeme sayfasında yapılır, ödeme alınınca kaydınız kesinleşir.</p>
+            <a class="btn" href="/odeme.php?kod=<?= e(rawurlencode($r['code'])) ?>&amp;k=<?= e(reg_key($r)) ?>">Kartla öde · <?= money($r['total']) ?></a>
+          </div>
+        <?php endif; ?>
         <?php if ($r['method'] === 'havale'): ?>
           <?php if (trim((string) setting('bank_iban', '')) !== ''): ?>
             <dl class="pay__rows">

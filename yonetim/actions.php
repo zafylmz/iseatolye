@@ -93,7 +93,7 @@ switch ($action) {
       $ev['package'] = !empty($_POST['package']);
       $ev['capacity'] = post_int('capacity');
       $ev['tickets'] = $tickets;
-      $ev['pay_methods'] = array_values(array_intersect((array) ($_POST['pay_methods'] ?? []), array_keys(PAY_METHODS)));
+      $ev['pay_methods'] = array_values(array_intersect((array) ($_POST['pay_methods'] ?? []), PAY_METHODS_ACTIVE));
       $ev['pay_link'] = filter_var(post('pay_link'), FILTER_VALIDATE_URL) ? post('pay_link') : '';
       foreach (['reg_open', 'waitlist', 'approval', 'show_left', 'show_attendees', 'comments', 'featured', 'pinned'] as $k) $ev[$k] = !empty($_POST[$k]);
       $ev['reg_close_hours'] = post_int('reg_close_hours', 0, 24 * 30);
@@ -255,7 +255,7 @@ switch ($action) {
           $r['inv_date'] = $r['inv_no'] === '' ? '' : (preg_match('/^\d{4}-\d{2}-\d{2}$/', post('inv_date')) ? post('inv_date') : date('Y-m-d'));
           $inv = [];
           foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'address' => 300] as $k => $max) $inv[$k] = mb_substr(trim(post('inv_' . $k)), 0, $max);
-          $r['invoice'] = $inv['title'] !== '' ? $inv : [];
+          $r['invoice'] = $inv['title'] !== '' ? ['type' => 'kurumsal'] + $inv : (implode('', $inv) !== '' ? ['type' => 'bireysel', 'tax_no' => $inv['tax_no'], 'address' => $inv['address']] : []);
         }
         foreach (['name' => 80, 'phone' => 30, 'others' => 400] as $k => $max) if (isset($_POST[$k])) $r[$k] = mb_substr(post($k), 0, $max);
         if (isset($_POST['email']) && ($r['user'] ?? '') === '' && filter_var(post('email'), FILTER_VALIDATE_EMAIL)) $r['email'] = post('email');
@@ -328,6 +328,14 @@ switch ($action) {
     backup_file(REGS_FILE);
     regs_update(function (array &$d) use ($id) { $d['regs'] = array_values(array_filter($d['regs'], fn($r) => $r['id'] !== $id)); });
     flash('Kayıt silindi.');
+    redirect($back ?: './?s=katilimlar');
+
+  case 'kayit-toplu-sil':
+    $ids = array_map('strval', (array) ($_POST['ids'] ?? []));
+    if (!$ids) { flash('Silinecek kayıt seçmediniz.', 'err'); redirect($back ?: './?s=katilimlar'); }
+    backup_file(REGS_FILE);
+    $n = regs_update(function (array &$d) use ($ids) { $before = count($d['regs']); $d['regs'] = array_values(array_filter($d['regs'], fn($r) => !in_array($r['id'], $ids, true))); return $before - count($d['regs']); });
+    flash($n . ' kayıt silindi.');
     redirect($back ?: './?s=katilimlar');
 
   case 'kayit-ekle':
@@ -556,7 +564,7 @@ switch ($action) {
       if ($label !== '' && filter_var($url, FILTER_VALIDATE_URL)) $c['socials'][] = ['label' => $label, 'url' => $url];
     }
     $st = &$c['settings'];
-    foreach (['site_url', 'mail_from', 'notify_email', 'bank_name', 'bank_holder', 'bank_iban', 'payment_note', 'cancel_policy', 'terms', 'reg_success_note'] as $k) $st[$k] = post($k);
+    foreach (['site_url', 'mail_from', 'notify_email', 'bank_name', 'bank_holder', 'bank_iban', 'payment_note', 'cancel_policy', 'terms', 'reg_success_note', 'seller_title', 'seller_tax', 'seller_address', 'seller_mersis', 'seller_kep'] as $k) $st[$k] = post($k);
     $st['site_url'] = rtrim($st['site_url'], '/');
     $st['bank_iban'] = strtoupper(preg_replace('/\s+/', ' ', $st['bank_iban']));
     foreach (['require_login', 'comment_moderation', 'mail_enabled'] as $k) $st[$k] = !empty($_POST[$k]);
@@ -595,6 +603,27 @@ switch ($action) {
     flash('E-posta hesabı kaydedildi ve ' . $to . ' adresine deneme e-postası gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.');
     redirect('./?s=ayarlar#smtp');
 
+  case 'iyzico':
+    require_once ROOT . '/inc/iyzico.php';
+    if (post('kaldir') === '1') {
+      if (is_file(IYZICO_FILE)) @unlink(IYZICO_FILE);
+      flash('Kartla ödeme kapatıldı. Kayıt formunda bu seçenek artık görünmez.');
+      redirect('./?s=ayarlar#kart');
+    }
+    $old = iyzico_config() ?? [];
+    $cfg = [
+      'api_key' => preg_replace('/\s+/', '', post('iz_api')),
+      'secret' => ($_POST['iz_secret'] ?? '') !== '' ? preg_replace('/\s+/', '', (string) $_POST['iz_secret']) : (string) ($old['secret'] ?? ''),
+      'sandbox' => post('iz_mode') !== 'live',
+    ];
+    if ($cfg['api_key'] === '' || $cfg['secret'] === '') throw new RuntimeException('API anahtarını ve güvenlik anahtarını yazın.');
+    $err = iyzico_test($cfg);
+    if ($err !== '') { flash('Kaydedilmedi, iyzico anahtarları kabul etmedi: ' . $err . ($cfg['sandbox'] ? ' (Deneme ortamı seçili; canlı anahtarlar için "Canlı" seçin.)' : ' (Canlı seçili; deneme anahtarları için "Deneme" seçin.)'), 'err'); redirect('./?s=ayarlar#kart'); }
+    if (@file_put_contents(IYZICO_FILE, "<?php\n// iyzico anahtarları (panelden oluşturuldu). Silerseniz kartla ödeme kapanır.\nreturn " . var_export($cfg, true) . ";\n", LOCK_EX) === false) throw new RuntimeException('data/iyzico.php yazılamadı. data klasörünün yazma iznini kontrol edin.');
+    @chmod(IYZICO_FILE, 0600);
+    flash('iyzico anahtarları doğrulandı ve kaydedildi. Kartla ödeme ' . ($cfg['sandbox'] ? 'deneme ortamında' : 'canlı olarak') . ' açık.');
+    redirect('./?s=ayarlar#kart');
+
   case 'deneme-epostasi':
     $to = admin_email();
     if ($to === '') throw new RuntimeException('Önce bildirim e-postasını ya da iletişim e-postasını yazın.');
@@ -617,6 +646,27 @@ switch ($action) {
     redirect('./?s=istatistik');
 
   // ---------- Galeri (görsel kütüphanesi) ----------
+  case 'medya-optimize':
+    // Büyük görselleri aynı adla, küçültülmüş ve sıkıştırılmış hâliyle değiştirir. Zaman aşımı olmasın diye parça parça çalışır.
+    $start = microtime(true); $done = 0; $saved = 0;
+    foreach (media_big() as $m) {
+      if (microtime(true) - $start > 20) break;
+      $file = ROOT . $m['path'];
+      $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+      $type = $ext === 'jpeg' ? 'jpg' : $ext;
+      $before = (int) filesize($file);
+      if ($ext === $type && image_optimize($file, $type, substr($file, 0, -strlen($ext) - 1), true) !== '') {
+        clearstatcache(true, $file);
+        $saved += max(0, $before - (int) filesize($file)); $done++;
+        $t = ROOT . thumb_path($m['path']); if (is_file($t)) @unlink($t);
+        make_thumb($m['path']);
+      }
+      media_save($m['path'], ['opt' => 1]);
+    }
+    $left = count(media_big());
+    flash($done . ' görsel küçültüldü, ' . round($saved / 1048576, 1) . ' MB yer açıldı.' . ($left ? ' ' . $left . ' görsel kaldı, düğmeye tekrar basın.' : ''));
+    redirect('./?s=galeri');
+
   case 'medya-yukle':
     // Tarayıcıdan tek tek gönderilen görseller; yanıt JSON
     header('Content-Type: application/json; charset=utf-8');

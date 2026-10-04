@@ -90,6 +90,55 @@ function make_thumb(string $path): string {
   return $ok ? thumb_path($path) : $path;
 }
 
+// ---------- Optimizasyon ----------
+// Yüklenen görseller en fazla IMAGE_MAX piksel olacak şekilde küçültülür ve sıkıştırılarak kaydedilir; büyük orijinal tutulmaz.
+const IMAGE_MAX = 1920;
+const IMAGE_BIG = 400 * 1024; // bundan büyük dosyalar "büyük" sayılır
+
+// PNG gerçekten saydamlık kullanıyor mu? (Kullanmıyorsa fotoğraf gibi JPG olarak saklanır.)
+function png_has_alpha($img): bool {
+  $w = imagesx($img); $h = imagesy($img);
+  $stepX = max(1, intdiv($w, 40)); $stepY = max(1, intdiv($h, 40));
+  for ($y = 0; $y < $h; $y += $stepY) for ($x = 0; $x < $w; $x += $stepX) if ((imagecolorat($img, $x, $y) >> 24) & 0x7F) return true;
+  return false;
+}
+
+// $src dosyasını küçültüp sıkıştırarak $destBase + uzantı olarak yazar. $keepType: PNG'yi JPG'ye çevirme (yerinde optimizasyon).
+// Dönen değer yazılan uzantı; yazılamazsa ''. Sonuç orijinalden büyükse ve küçültme/döndürme gerekmiyorsa '' döner (orijinal kullanılır).
+function image_optimize(string $src, string $type, string $destBase, bool $keepType = false): string {
+  if (!function_exists('imagecreatetruecolor') || !in_array($type, ['jpg', 'png', 'webp'], true)) return '';
+  $info = @getimagesize($src);
+  if (!$info) return '';
+  $turn = exif_turn($src, $type);
+  $img = image_open($src, $type);
+  if (!$img) return '';
+  if (!imageistruecolor($img)) { imagealphablending($img, false); imagesavealpha($img, true); imagepalettetotruecolor($img); }
+  $img = image_upright($img, $src, $type);
+  $sw = imagesx($img); $sh = imagesy($img);
+  $scale = min(1, IMAGE_MAX / max($sw, $sh));
+  $w = max(1, (int) round($sw * $scale)); $h = max(1, (int) round($sh * $scale));
+  $alpha = $type !== 'jpg' && png_has_alpha($img);
+  $out = $type === 'png' && !$alpha && !$keepType ? 'jpg' : $type;
+  $dst = imagecreatetruecolor($w, $h);
+  if ($out === 'jpg') imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
+  else { imagealphablending($dst, false); imagesavealpha($dst, true); }
+  imagecopyresampled($dst, $img, 0, 0, 0, 0, $w, $h, $sw, $sh);
+  if ($out === 'jpg') imageinterlace($dst, true);
+  $tmp = $destBase . '.opt-' . bin2hex(random_bytes(3));
+  $ok = match ($out) { 'jpg' => imagejpeg($dst, $tmp, 82), 'png' => imagepng($dst, $tmp, 9), 'webp' => imagewebp($dst, $tmp, 80) };
+  if (!$ok || !is_file($tmp)) { @unlink($tmp); return ''; }
+  if ($scale === 1 && $turn === 0 && $out === $type && filesize($tmp) >= filesize($src)) { @unlink($tmp); return ''; }
+  if (!@rename($tmp, $destBase . '.' . $out)) { @unlink($tmp); return ''; }
+  @chmod($destBase . '.' . $out, 0644);
+  return $out;
+}
+
+// Daha önce yüklenmiş, optimize edilmemiş büyük görseller (GIF hariç)
+function media_big(): array {
+  $meta = media_meta()['items'];
+  return array_values(array_filter(media_all(), fn($m) => $m['size'] > IMAGE_BIG && empty($meta[$m['path']]['opt']) && strtolower(pathinfo($m['path'], PATHINFO_EXTENSION)) !== 'gif'));
+}
+
 function image_open(string $file, string $type) {
   return match ($type) { 'jpg' => @imagecreatefromjpeg($file), 'png' => @imagecreatefrompng($file), 'webp' => @imagecreatefromwebp($file), default => false };
 }
