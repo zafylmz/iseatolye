@@ -57,7 +57,7 @@ function calendar_month(int $y, int $m, string $mode = 'full'): string {
         <?php for ($i = 0; $i < $cells; $i++): $d = $i - $lead + 1;
           if ($d < 1 || $d > $days): ?><div class="cal__day is-out"></div><?php continue; endif;
           $date = sprintf('%s-%02d', $ym, $d); $list = $items[$date] ?? []; ?>
-          <div class="cal__day<?= $list ? ' has' : '' ?><?= $date === $today ? ' is-today' : '' ?><?= $date < $today ? ' is-past' : '' ?>">
+          <div class="cal__day<?= $list ? ' has' : '' ?><?= $date === $today ? ' is-today' : '' ?><?= $date < $today ? ' is-past' : '' ?>"<?= $list ? ' data-cal-day="' . $date . '"' : '' ?>>
             <span class="cal__num"><?= $d ?></span>
             <?php if ($list): ?><ul class="cal__evs">
               <?php foreach ($list as [$ev, $s]): $cancel = ($s['status'] ?? '') === 'iptal' || ($ev['status'] ?? '') === 'iptal'; ?>
@@ -72,7 +72,7 @@ function calendar_month(int $y, int $m, string $mode = 'full'): string {
         <?php if (!$items): ?><p class="muted">Bu ay için henüz planlanmış etkinlik yok.</p><?php else: ?>
         <ol>
           <?php foreach ($items as $date => $list) foreach ($list as [$ev, $s]): $v = venue($s['venue'] ?? ''); $cancel = ($s['status'] ?? '') === 'iptal' || ($ev['status'] ?? '') === 'iptal'; ?>
-            <li><a href="<?= e(event_url($ev)) ?>"<?= $date < $today ? ' class="is-past"' : '' ?>>
+            <li data-cal-item="<?= $date ?>"><a href="<?= e(event_url($ev)) ?>"<?= $date < $today ? ' class="is-past"' : '' ?>>
               <span class="cal__ld"><b><?= (int) substr($date, 8) ?></b><?= TR_DAYS_SHORT[(int) date('w', strtotime($date))] ?></span>
               <?= cal_img($ev, 'cal__lim') ?>
               <span class="cal__lt"><strong><?= e($ev['title']) ?><?= $cancel ? ' · İptal' : '' ?></strong><span><?= e(trim(($s['start'] ?? '') . (($s['end'] ?? '') ? ' – ' . $s['end'] : ''))) ?><?= ' · ' . e(session_place($s, false)) ?></span></span>

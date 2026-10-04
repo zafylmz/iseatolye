@@ -415,7 +415,19 @@ button { cursor: pointer; }
   .cal__ev { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); }
   .cal__ev > .cal__img, .cal__ev > .cal__tx { display: none; }
   .cal__day.is-past .cal__ev:not(:hover) { background: var(--line-2); }
+  .cal__day.has { cursor: pointer; }
+  .cal__day.is-picked { background: var(--accent-soft); }
   .cal__list { display: block; }
+  /* Telefonda liste büyük kartlar: görsel üstte, tarih ve bilgiler altta; geniş telefonda iki sütun */
+  .cal__list ol { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 16px; border-top: 0; }
+  .cal__list li { scroll-margin-top: calc(var(--header) + 16px); }
+  .cal-modal .cal__list li { scroll-margin-top: 16px; }
+  .cal__list a { grid-template-columns: 52px minmax(0, 1fr); grid-template-areas: 'img img' 'd t'; gap: 14px;  align-items: start; height: 100%; padding: 0 0 16px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--paper); overflow: hidden; transition: border-color .2s linear; }
+  .cal__list a:hover, .cal__list li.is-hit a { border-color: var(--accent); }
+  .cal__lim { grid-area: img; width: 100%; aspect-ratio: 16 / 10; border-radius: 0; }
+  .cal__lim.is-empty .ico { width: 34px; height: 34px; }
+  .cal__ld { grid-area: d; padding-left: 14px; }
+  .cal__lt { grid-area: t; padding-right: 14px; }
 }
 
 /* Takvim açılır penceresi */

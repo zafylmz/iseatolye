@@ -69,10 +69,25 @@
       location.href = '/takvim/?ay=' + encodeURIComponent(ym);
     }
   };
+  // Telefonda gün kutuları küçük: etkinlikli güne dokununca alttaki listede o günün etkinliklerine gider
+  const calSmall = matchMedia('(max-width: 760px)');
+  const showDay = (holder, day) => {
+    const hits = $$('[data-cal-item="' + day + '"]', holder);
+    if (!hits.length) return;
+    $$('.cal__day.is-picked, [data-cal-item].is-hit', holder).forEach((x) => x.classList.remove('is-picked', 'is-hit'));
+    $('[data-cal-day="' + day + '"]', holder)?.classList.add('is-picked');
+    hits.forEach((x) => x.classList.add('is-hit'));
+    hits[0].scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  };
   const bindCal = (holder, push) => {
     holder.addEventListener('click', (e) => {
       const go = e.target.closest('[data-cal-go]');
-      if (!go || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      if (!go) {
+        const day = calSmall.matches && e.target.closest('[data-cal-day]');
+        if (day) { e.preventDefault(); showDay(holder, day.dataset.calDay); }
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
       e.preventDefault();
       loadMonth(holder, go.dataset.calGo, push);
     });
