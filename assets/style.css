@@ -377,21 +377,31 @@ button { cursor: pointer; }
 .cal__num { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .cal__day.is-today .cal__num { background: var(--accent); color: #fffaf3; font-weight: 600; }
 .cal__evs { display: grid; gap: 4px; }
-.cal__ev { display: block; padding: 5px 7px; border-left: 2px solid var(--accent); border-radius: 0 var(--r) var(--r) 0; background: var(--accent-soft); font-size: 12px; line-height: 1.3; color: var(--ink); transition: background-color .2s linear, color .2s linear; overflow: hidden; }
+.cal__ev { display: block; border-left: 2px solid var(--accent); border-radius: 0 var(--r) var(--r) 0; background: var(--accent-soft); font-size: 12px; line-height: 1.3; color: var(--ink); transition: background-color .2s linear, color .2s linear; overflow: hidden; }
 .cal__ev:hover { background: var(--accent); color: #fffaf3; }
+.cal__img { display: block; aspect-ratio: 16 / 10; background: var(--sand); overflow: hidden; }
+.cal__img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cal__img.is-empty, .cal__lim.is-empty { display: grid; place-items: center; color: var(--line-2); background: var(--sand) repeating-linear-gradient(135deg, transparent 0 8px, rgba(214, 198, 177, .25) 8px 9px); }
+.cal__img.is-empty .ico { width: 26px; height: 26px; }
+.cal__tx { display: block; padding: 5px 7px; }
 .cal__ev time { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: var(--accent); transition: color .2s linear; }
 .cal__ev:hover time { color: #f4e3cf; }
-.cal__ev span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; }
-.cal__ev.is-cancel { border-left-color: var(--line-2); background: var(--sand); color: var(--muted); text-decoration: line-through; }
+.cal__tt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; }
+.cal__ev.is-cancel { border-left-color: var(--line-2); background: var(--sand); color: var(--muted); }
+.cal__ev.is-cancel .cal__tt { text-decoration: line-through; }
+.cal__ev.is-cancel .cal__img img, .cal__day.is-past .cal__img img { filter: grayscale(.6); opacity: .75; }
 .cal__day.is-past .cal__ev:not(:hover) { background: var(--sand); border-left-color: var(--line-2); color: var(--muted); }
 .cal__day.is-past .cal__ev:not(:hover) time { color: var(--muted); }
 .cal__list { display: none; margin-top: 28px; }
 .cal__list ol { margin-top: 12px; border-top: 1px solid var(--line); }
-.cal__list a { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 2px; border-bottom: 1px solid var(--line); }
+.cal__list a { display: grid; grid-template-columns: 52px 72px minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 2px; border-bottom: 1px solid var(--line); }
 .cal__list a.is-past { opacity: .6; }
 .cal__list a:hover strong { color: var(--accent); }
 .cal__ld { display: grid; justify-items: center; line-height: 1; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
 .cal__ld b { font-family: var(--serif); font-size: 26px; color: var(--ink); margin-bottom: 3px; letter-spacing: 0; }
+.cal__lim { display: block; width: 72px; aspect-ratio: 4 / 3; border-radius: var(--r); background: var(--sand); overflow: hidden; }
+.cal__lim img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cal__lim.is-empty .ico { width: 22px; height: 22px; }
 .cal__lt { display: grid; gap: 2px; min-width: 0; }
 .cal__lt strong { font-family: var(--serif); font-size: 20px; font-weight: 600; line-height: 1.2; color: var(--ink); transition: color .2s linear; }
 .cal__lt span { font-size: 13px; color: var(--muted); }
@@ -403,7 +413,7 @@ button { cursor: pointer; }
   .cal__day { min-height: 0; aspect-ratio: 1; padding: 4px; align-items: center; justify-content: center; gap: 2px; }
   .cal__evs { display: flex; gap: 3px; }
   .cal__ev { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); }
-  .cal__ev time, .cal__ev span { display: none; }
+  .cal__ev > .cal__img, .cal__ev > .cal__tx { display: none; }
   .cal__day.is-past .cal__ev:not(:hover) { background: var(--line-2); }
   .cal__list { display: block; }
 }

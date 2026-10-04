@@ -1,6 +1,14 @@
 <?php
 // Ay takvimi. $mode: 'full' (takvim sayfası ve açılır pencere) ya da 'mini' (ana sayfa).
 require_once __DIR__ . '/events.php';
+require_once __DIR__ . '/media.php';
+
+// Takvim öğesinin görseli: etkinliğin kapak görselinin küçük kopyası; görsel yoksa sade bir yer tutucu.
+function cal_img(array $ev, string $cls = 'cal__img'): string {
+  $src = (string) ($ev['cover'] ?? '');
+  if ($src === '') return '<span class="' . $cls . ' is-empty" aria-hidden="true">' . icon('nilufer') . '</span>';
+  return '<span class="' . $cls . '" aria-hidden="true"><img src="' . e(thumb_url($src)) . '" alt="" width="720" height="540" loading="lazy" decoding="async"></span>';
+}
 
 function cal_ym(?string $s): array {
   if ($s && preg_match('/^(\d{4})-(\d{2})$/', $s, $m) && (int) $m[2] >= 1 && (int) $m[2] <= 12) return [(int) $m[1], (int) $m[2]];
@@ -53,7 +61,7 @@ function calendar_month(int $y, int $m, string $mode = 'full'): string {
             <span class="cal__num"><?= $d ?></span>
             <?php if ($list): ?><ul class="cal__evs">
               <?php foreach ($list as [$ev, $s]): $cancel = ($s['status'] ?? '') === 'iptal' || ($ev['status'] ?? '') === 'iptal'; ?>
-                <li><a class="cal__ev<?= $cancel ? ' is-cancel' : '' ?>" href="<?= e(event_url($ev)) ?>" title="<?= e($ev['title'] . ' · ' . session_when($s, false)) ?>"><?php if ($s['start'] ?? ''): ?><time><?= e($s['start']) ?></time><?php endif; ?><span><?= e($ev['title']) ?></span></a></li>
+                <li><a class="cal__ev<?= $cancel ? ' is-cancel' : '' ?>" href="<?= e(event_url($ev)) ?>" title="<?= e($ev['title'] . ' · ' . session_when($s, false)) ?>"><?= cal_img($ev) ?><span class="cal__tx"><?php if ($s['start'] ?? ''): ?><time><?= e($s['start']) ?></time><?php endif; ?><span class="cal__tt"><?= e($ev['title']) ?></span></span></a></li>
               <?php endforeach; ?>
             </ul><?php endif; ?>
           </div>
@@ -66,6 +74,7 @@ function calendar_month(int $y, int $m, string $mode = 'full'): string {
           <?php foreach ($items as $date => $list) foreach ($list as [$ev, $s]): $v = venue($s['venue'] ?? ''); $cancel = ($s['status'] ?? '') === 'iptal' || ($ev['status'] ?? '') === 'iptal'; ?>
             <li><a href="<?= e(event_url($ev)) ?>"<?= $date < $today ? ' class="is-past"' : '' ?>>
               <span class="cal__ld"><b><?= (int) substr($date, 8) ?></b><?= TR_DAYS_SHORT[(int) date('w', strtotime($date))] ?></span>
+              <?= cal_img($ev, 'cal__lim') ?>
               <span class="cal__lt"><strong><?= e($ev['title']) ?><?= $cancel ? ' · İptal' : '' ?></strong><span><?= e(trim(($s['start'] ?? '') . (($s['end'] ?? '') ? ' – ' . $s['end'] : ''))) ?><?= ' · ' . e(session_place($s, false)) ?></span></span>
             </a></li>
           <?php endforeach; ?>
