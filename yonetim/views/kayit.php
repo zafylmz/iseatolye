@@ -60,6 +60,7 @@ $back = panel_url(['s' => 'katilimlar', 'etkinlik' => $r['event']]);
         <div><dt>Tarih</dt><dd><?= e(reg_session_label($r, $ev)) ?></dd></div>
         <div><dt>Bilet</dt><dd><?= e($r['ticket_name']) ?> × <?= (int) $r['qty'] ?> · <?= (int) $r['seats'] ?> kişi</dd></div>
         <div><dt>Tutar</dt><dd><?= $r['total'] > 0 ? e(money($r['total'])) . ' · ' . e(PAY_METHODS[$r['method']] ?? 'Yöntem seçilmedi') : 'Ücretsiz' ?></dd></div>
+        <?php if (trim((string) ($r['pay_ref'] ?? '')) !== ''): ?><div><dt>iyzico ödeme no</dt><dd><code><?= e($r['pay_ref']) ?></code></dd></div><?php endif; ?>
         <div><dt>E-posta</dt><dd><?= $r['email'] !== '' ? '<a href="mailto:' . e($r['email']) . '">' . e($r['email']) . '</a>' : '–' ?></dd></div>
         <div><dt>Telefon</dt><dd><?= $r['phone'] !== '' ? '<a href="' . e(wa_href($r['phone'], 'Merhaba ' . $r['name'] . ', ' . ($ev['title'] ?? '') . ' kaydınız hakkında yazıyorum.')) . '" target="_blank" rel="noopener">' . e($r['phone']) . ' (WhatsApp)</a>' : '–' ?></dd></div>
         <div><dt>Üyelik</dt><dd><?= $u ? '<a href="./?s=uye&amp;id=' . e(urlencode($u['id'])) . '">' . e($u['name']) . '</a>' : 'Üye değil' ?></dd></div>

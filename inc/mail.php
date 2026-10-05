@@ -22,6 +22,7 @@ function payment_text(array $r, array $ev): string {
     return "\n\nÖdeme bilgileri\nBanka: " . setting('bank_name', '') . "\nAlıcı: " . setting('bank_holder', '') . "\nIBAN: " . setting('bank_iban', '') . "\nAçıklama: " . $r['code'] . "\n" . setting('payment_note', '');
   }
   if ($r['method'] === 'link' && trim($ev['pay_link'] ?? '') !== '') return "\n\nÖdeme sayfası: " . $ev['pay_link'];
+  if ($r['method'] === 'iyzico') return "\n\nKartla ödemenizi tamamlamadıysanız buradan ödeyebilirsiniz: " . site_url('/odeme.php?kod=' . rawurlencode($r['code']) . '&k=' . reg_key($r));
   if ($r['method'] === 'yerinde') return "\n\nÜcreti etkinlik günü ödeyebilirsiniz.";
   return '';
 }

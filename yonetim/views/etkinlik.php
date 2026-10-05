@@ -9,7 +9,7 @@ $ev = $found ?? [
   'includes' => [], 'bring' => [], 'faq' => [], 'instructors' => [], 'level' => 'herkes', 'age' => '', 'duration' => '',
   'sessions' => [['id' => '', 'date' => '', 'start' => '', 'end' => '', 'venue' => $cat['venues'][0]['id'] ?? '', 'place' => '', 'capacity' => 0, 'status' => 'acik', 'note' => '']],
   'package' => false, 'capacity' => 0, 'tickets' => [['id' => '', 'name' => 'Kişi başı', 'price' => 0, 'seats' => 1, 'limit' => 0, 'until' => '', 'note' => '']],
-  'pay_methods' => ['havale', 'yerinde'], 'pay_link' => '', 'reg_open' => true, 'reg_close_hours' => 3, 'max_per_order' => 4, 'waitlist' => true, 'approval' => false,
+  'pay_methods' => ['havale'], 'pay_link' => '', 'reg_open' => true, 'reg_close_hours' => 3, 'max_per_order' => 4, 'waitlist' => true, 'approval' => false,
   'show_left' => true, 'show_attendees' => true, 'comments' => true, 'featured' => false, 'pinned' => false, 'cancel_policy' => '', 'seo_title' => '',
 ];
 // Hatalı kayıttan sonra girilen bilgiler kaybolmasın
@@ -133,7 +133,7 @@ $faqRow = function (string $i, array $q): string {
     <div><button type="button" class="btn btn--ghost" data-add="tickets">+ Bilet ekle</button></div>
     <p class="sub">Ödeme yöntemleri <span class="opt">(ücretli biletler için)</span></p>
     <div class="checks">
-      <?php foreach (PAY_METHODS as $k => $l): ?><label class="check"><input type="checkbox" name="pay_methods[]" value="<?= $k ?>"<?= in_array($k, $ev['pay_methods'] ?? [], true) ? ' checked' : '' ?>> <?= e($l) ?></label><?php endforeach; ?>
+      <?php foreach (array_intersect_key(PAY_METHODS, array_flip(PAY_METHODS_ACTIVE)) as $k => $l): ?><label class="check"><input type="checkbox" name="pay_methods[]" value="<?= $k ?>"<?= in_array($k, $ev['pay_methods'] ?? [], true) ? ' checked' : '' ?>> <?= e($l) ?></label><?php endforeach; ?>
     </div>
     <label>Online ödeme bağlantısı <span class="opt">(iyzico, Shopier, PayTR linki vb.)</span><input type="url" name="pay_link" value="<?= e($ev['pay_link'] ?? '') ?>" placeholder="https://"></label>
     <?php if (trim((string) setting('bank_iban', '')) === ''): ?><p class="notice">Havale seçeneği için <a href="./?s=ayarlar#odeme">Ayarlar</a> bölümünden banka ve IBAN bilgisini girin.</p><?php endif; ?>

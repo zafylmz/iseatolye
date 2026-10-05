@@ -29,7 +29,11 @@ const PAY_METHODS = [
   'havale' => 'Havale / EFT',
   'yerinde' => 'Etkinlikte ödeme',
   'link' => 'Online ödeme bağlantısı',
+  'iyzico' => 'Kredi / banka kartı',
 ];
+// Sitede seçilebilen yöntemler. "Etkinlikte ödeme" kaldırıldı; eski kayıtlarda adı görünsün diye PAY_METHODS'ta duruyor.
+// Kartla ödeme (iyzico) etkinlik bazında seçilmez: anahtarlar girilince tüm ücretli etkinliklerde görünür.
+const PAY_METHODS_ACTIVE = ['havale', 'link'];
 const LEVELS = ['' => 'Belirtilmemiş', 'herkes' => 'Herkes için', 'baslangic' => 'Başlangıç', 'orta' => 'Orta seviye', 'ileri' => 'İleri seviye'];
 
 function catalog(): array {
@@ -176,9 +180,12 @@ function price_short(array $ev): string {
 
 function pay_methods(array $ev): array {
   if (event_is_free($ev)) return [];
-  $m = array_values(array_intersect(array_keys(PAY_METHODS), (array) ($ev['pay_methods'] ?? ['havale'])));
+  $m = array_values(array_intersect(PAY_METHODS_ACTIVE, (array) ($ev['pay_methods'] ?? ['havale'])));
   if (in_array('link', $m, true) && trim($ev['pay_link'] ?? '') === '') $m = array_values(array_diff($m, ['link']));
-  return $m ?: ['havale'];
+  $m = $m ?: ['havale'];
+  require_once __DIR__ . '/iyzico.php';
+  if (iyzico_on()) array_unshift($m, 'iyzico');
+  return $m;
 }
 
 // ---------- Katılımlar ----------
@@ -207,7 +214,7 @@ function capacity_of(array $ev, string $sid): int {
 // Böylece ödeme yapılmayan kayıtlarla yerler kalıcı olarak tutulamaz. Kayıt silinmez, panelde görünmeye devam eder.
 function holds_seat(array $r): bool {
   if (!in_array($r['status'], SEAT_STATUSES, true)) return false;
-  if ($r['status'] === 'onayli' || !empty($r['paid']) || !in_array($r['method'] ?? '', ['havale', 'link'], true)) return true;
+  if ($r['status'] === 'onayli' || !empty($r['paid']) || !in_array($r['method'] ?? '', ['havale', 'link', 'iyzico'], true)) return true;
   $h = (int) setting('hold_hours', 48);
   return $h <= 0 || (strtotime((string) ($r['created'] ?? '')) ?: time()) > time() - $h * 3600;
 }
@@ -431,8 +438,8 @@ function invoice_due(array $r): bool {
 function invoice_corporate(array $r): bool { return trim((string) ($r['invoice']['title'] ?? '')) !== ''; }
 
 function invoice_buyer(array $r): string {
-  if (!invoice_corporate($r)) return $r['name'];
-  $i = $r['invoice'];
+  $i = $r['invoice'] ?? [];
+  if (!invoice_corporate($r)) return $r['name'] . (trim((string) ($i['tax_no'] ?? '')) !== '' ? ' · TC ' . $i['tax_no'] : '');
   return $i['title'] . ' · ' . $i['tax_office'] . ' VD · ' . $i['tax_no'];
 }
 
@@ -442,12 +449,27 @@ function vat_split(float $gross): array {
   return [$net, round($gross - $net, 2), $rate];
 }
 
-// Katılım formundan gelen kurumsal fatura bilgisi. Boşsa bireysel fatura (kayıttaki ad soyada) kesilir.
+function tckn_valid(string $n): bool {
+  if (!preg_match('/^[1-9]\d{10}$/', $n)) return false;
+  $d = array_map('intval', str_split($n));
+  $odd = $d[0] + $d[2] + $d[4] + $d[6] + $d[8];
+  $even = $d[1] + $d[3] + $d[5] + $d[7];
+  return (($odd * 7 - $even) % 10 + 10) % 10 === $d[9] && array_sum(array_slice($d, 0, 10)) % 10 === $d[10];
+}
+
+// Katılım formundan gelen fatura bilgisi.
+// Bireysel: kayıttaki ad soyada kesilir; T.C. kimlik no ve adres zorunlu.
+// Kurumsal: unvan, vergi dairesi, vergi no ve adres zorunlu.
 function invoice_from_post(array &$errors): array {
   $f = [];
-  foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'address' => 300] as $k => $max) $f[$k] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string) ($_POST['inv_' . $k] ?? ''))), 0, $max);
-  if (empty($_POST['inv_corp']) || implode('', $f) === '') return [];
-  if ($f['title'] === '' || $f['tax_office'] === '' || $f['address'] === '') $errors[] = 'Şirket adına fatura için unvan, vergi dairesi ve fatura adresini yazın.';
-  if (!preg_match('/^\d{10,11}$/', $f['tax_no'])) $errors[] = 'Vergi numarası 10, T.C. kimlik numarası 11 haneli olmalı.';
-  return $f;
+  foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'tckn' => 11, 'address' => 300] as $k => $max) $f[$k] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string) ($_POST['inv_' . $k] ?? ''))), 0, $max);
+  if (mb_strlen($f['address']) < 3) $errors[] = 'Fatura adresinizi yazın (il ve ilçe yeterli).';
+  if (($_POST['inv_type'] ?? '') !== 'kurumsal') {
+    if ($f['tckn'] === '') $errors[] = 'Fatura için T.C. kimlik numaranızı yazın.';
+    elseif (!tckn_valid($f['tckn'])) $errors[] = 'T.C. kimlik numarası geçerli görünmüyor, kontrol edin.';
+    return ['type' => 'bireysel', 'tax_no' => $f['tckn'], 'address' => $f['address']];
+  }
+  if ($f['title'] === '' || $f['tax_office'] === '') $errors[] = 'Şirket adına fatura için unvan ve vergi dairesini yazın.';
+  if (!preg_match('/^\d{10,11}$/', $f['tax_no'])) $errors[] = 'Vergi numarası 10, şahıs şirketlerinde T.C. kimlik numarası 11 haneli olmalı.';
+  return ['type' => 'kurumsal', 'title' => $f['title'], 'tax_office' => $f['tax_office'], 'tax_no' => $f['tax_no'], 'address' => $f['address']];
 }

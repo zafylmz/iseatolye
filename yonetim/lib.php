@@ -157,8 +157,8 @@ function files_of(string $field): array {
   return $out;
 }
 
-// Görseli doğrular, gerekirse 2400 piksele küçültür, telefon fotoğraflarını düz çevirir ve /uploads altına kaydeder.
-// Kaydedilen her görsel kütüphaneye (Galeri) eklenir. Dönen değer site yolu.
+// Görseli doğrular; telefon fotoğraflarını düz çevirir, en fazla 1920 piksele küçültüp sıkıştırarak /uploads altına kaydeder.
+// Saydamlık kullanmayan PNG'ler JPG olur. Büyük orijinal sunucuda tutulmaz. Kaydedilen her görsel kütüphaneye (Galeri) eklenir.
 function store_image(array $file, string $prefix, string $sub = '', array $meta = []): ?string {
   if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
   if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) throw new RuntimeException('Görsel sunucunun izin verdiği boyuttan büyük (' . ini_get('upload_max_filesize') . ').');
@@ -170,22 +170,12 @@ function store_image(array $file, string $prefix, string $sub = '', array $meta 
   $ext = $types[$info[2]];
   $dir = UPLOAD_DIR . ($sub !== '' ? '/' . $sub : '');
   if (!is_dir($dir)) mkdir($dir, 0755, true);
-  $name = substr(slugify($prefix, 'gorsel'), 0, 50) . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
-  $dest = $dir . '/' . $name;
-  $max = 2400;
-  $turn = exif_turn($file['tmp_name'], $ext);
-  if (function_exists('imagecreatetruecolor') && $ext !== 'gif' && (max($info[0], $info[1]) > $max || $turn !== 0) && ($src = image_open($file['tmp_name'], $ext))) {
-    $src = image_upright($src, $file['tmp_name'], $ext);
-    $sw = imagesx($src); $sh = imagesy($src);
-    $scale = min(1, $max / max($sw, $sh));
-    $w = (int) round($sw * $scale); $h = (int) round($sh * $scale);
-    $dst = imagecreatetruecolor($w, $h);
-    imagealphablending($dst, false); imagesavealpha($dst, true);
-    imagecopyresampled($dst, $src, 0, 0, 0, 0, $w, $h, $sw, $sh);
-    match ($ext) { 'jpg' => imagejpeg($dst, $dest, 86), 'png' => imagepng($dst, $dest, 6), 'webp' => imagewebp($dst, $dest, 86) };
-  } elseif (!move_uploaded_file($file['tmp_name'], $dest)) {
-    throw new RuntimeException('Görsel kaydedilemedi. uploads klasörünün yazma izni olduğundan emin olun.');
-  }
+  $base = $dir . '/' . substr(slugify($prefix, 'gorsel'), 0, 50) . '-' . bin2hex(random_bytes(4));
+  $out = image_optimize($file['tmp_name'], $ext, $base);
+  if ($out !== '') $ext = $out;
+  elseif (!move_uploaded_file($file['tmp_name'], $base . '.' . $ext)) throw new RuntimeException('Görsel kaydedilemedi. uploads klasörünün yazma izni olduğundan emin olun.');
+  $dest = $base . '.' . $ext;
+  $name = basename($dest);
   @chmod($dest, 0644);
   $path = '/uploads/' . ($sub !== '' ? $sub . '/' : '') . $name;
   media_save($path, $meta + ['added' => date('Y-m-d H:i:s')]);

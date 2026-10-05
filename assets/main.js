@@ -34,7 +34,10 @@
   const menuBtn = $('.menu-btn');
   const nav = $('#menu');
   if (menuBtn && nav) {
+    const header = $('.header');
     const setMenu = (open) => {
+      // Duyuru şeridi görünürken menü başlığın hemen altından başlasın
+      if (open && header) nav.style.setProperty('--menu-top', Math.max(0, header.getBoundingClientRect().bottom) + 'px');
       nav.classList.toggle('is-open', open);
       menuBtn.setAttribute('aria-expanded', String(open));
       menuBtn.setAttribute('aria-label', open ? 'Menüyü kapat' : 'Menüyü aç');
@@ -43,7 +46,19 @@
     menuBtn.addEventListener('click', () => setMenu(!nav.classList.contains('is-open')));
     nav.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
     addEventListener('keydown', (e) => { if (e.key === 'Escape' && nav.classList.contains('is-open')) { setMenu(false); menuBtn.focus(); } });
-    matchMedia('(min-width: 1080px)').addEventListener('change', (m) => { if (m.matches) setMenu(false); });
+    matchMedia('(min-width: 1001px)').addEventListener('change', (m) => { if (m.matches) setMenu(false); });
+  }
+
+  // ---------- Üst menü: "Hakkımızda" açılır listesi ----------
+  const moreBtn = $('.nav__more');
+  const moreGroup = moreBtn && moreBtn.closest('.nav__group');
+  if (moreGroup) {
+    const setMore = (open) => { moreGroup.classList.toggle('is-open', open); moreBtn.setAttribute('aria-expanded', String(open)); };
+    moreBtn.addEventListener('click', (e) => { e.stopPropagation(); setMore(!moreGroup.classList.contains('is-open')); });
+    moreGroup.addEventListener('mouseleave', () => setMore(false));
+    moreGroup.addEventListener('focusout', (e) => { if (!moreGroup.contains(e.relatedTarget)) setMore(false); });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.nav__group')) setMore(false); });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && moreGroup.classList.contains('is-open')) { setMore(false); moreBtn.focus(); } });
   }
 
   // ---------- Üye menüsü ----------
@@ -69,10 +84,25 @@
       location.href = '/takvim/?ay=' + encodeURIComponent(ym);
     }
   };
+  // Telefonda gün kutuları küçük: etkinlikli güne dokununca alttaki listede o günün etkinliklerine gider
+  const calSmall = matchMedia('(max-width: 760px)');
+  const showDay = (holder, day) => {
+    const hits = $$('[data-cal-item="' + day + '"]', holder);
+    if (!hits.length) return;
+    $$('.cal__day.is-picked, [data-cal-item].is-hit', holder).forEach((x) => x.classList.remove('is-picked', 'is-hit'));
+    $('[data-cal-day="' + day + '"]', holder)?.classList.add('is-picked');
+    hits.forEach((x) => x.classList.add('is-hit'));
+    hits[0].scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  };
   const bindCal = (holder, push) => {
     holder.addEventListener('click', (e) => {
       const go = e.target.closest('[data-cal-go]');
-      if (!go || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      if (!go) {
+        const day = calSmall.matches && e.target.closest('[data-cal-day]');
+        if (day) { e.preventDefault(); showDay(holder, day.dataset.calDay); }
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
       e.preventDefault();
       loadMonth(holder, go.dataset.calGo, push);
     });
@@ -403,8 +433,12 @@
   }
 })();
 
-// Şirket adına fatura kutusu: onay işareti ile açık/kapalı durumu aynı kalsın
-document.querySelectorAll('details.invbox').forEach((d) => {
-  const cb = d.querySelector('[data-inv-toggle]');
-  if (cb) d.addEventListener('toggle', () => { cb.checked = d.open; });
+// Fatura türü: bireysel / şirket adına alanlarını değiştir
+document.querySelectorAll('[data-inv]').forEach((box) => {
+  const sync = () => {
+    const t = (box.querySelector('[data-inv-type]:checked') || {}).value || 'bireysel';
+    box.querySelectorAll('[data-inv-group]').forEach((g) => { g.hidden = g.dataset.invGroup !== t; });
+  };
+  box.querySelectorAll('[data-inv-type]').forEach((r) => r.addEventListener('change', sync));
+  sync();
 });

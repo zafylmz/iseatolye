@@ -18,13 +18,17 @@ $max = max(1, (int) ($ev['max_per_order'] ?? 4));
 $errors = [];
 $old = ['session' => (string) ($_GET['oturum'] ?? ''), 'ticket' => $tickets[0]['id'] ?? '', 'qty' => 1, 'phone' => $me['phone'] ?? '', 'note' => '', 'others' => '', 'method' => $methods[0] ?? '', 'name' => $me['name'] ?? '', 'email' => $me['email'] ?? ''];
 if (count($sessions) === 1) $old['session'] = $sessions[0]['id'];
-// Şirket adına fatura bilgisi: formdan ya da üyenin önceki kaydından
-$invOld = ['corp' => !empty($_POST['inv_corp']), 'title' => '', 'tax_office' => '', 'tax_no' => '', 'address' => ''];
-foreach (['title', 'tax_office', 'tax_no', 'address'] as $k) $invOld[$k] = trim((string) ($_POST['inv_' . $k] ?? ''));
+// Fatura bilgisi: formdan ya da üyenin önceki kaydından
+$invOld = ['type' => ($_POST['inv_type'] ?? '') === 'kurumsal' ? 'kurumsal' : 'bireysel', 'title' => '', 'tax_office' => '', 'tax_no' => '', 'tckn' => '', 'address' => ''];
+foreach (['title', 'tax_office', 'tax_no', 'tckn', 'address'] as $k) $invOld[$k] = trim((string) ($_POST['inv_' . $k] ?? ''));
 if ($me && ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
-  $mine = array_filter(regs_all(), fn($x) => ($x['user'] ?? '') === $me['id'] && !empty($x['invoice']['title']));
+  $mine = array_filter(regs_all(), fn($x) => ($x['user'] ?? '') === $me['id'] && trim((string) ($x['invoice']['address'] ?? '')) !== '');
   usort($mine, fn($a, $b) => strcmp($b['created'], $a['created']));
-  if ($mine) $invOld = ['corp' => true] + $mine[0]['invoice'];
+  if ($mine) {
+    $iv = $mine[0]['invoice'];
+    $corp = trim((string) ($iv['title'] ?? '')) !== '';
+    $invOld = ['type' => $corp ? 'kurumsal' : 'bireysel', 'title' => $iv['title'] ?? '', 'tax_office' => $iv['tax_office'] ?? '', 'tax_no' => $corp ? $iv['tax_no'] ?? '' : '', 'tckn' => $corp ? '' : $iv['tax_no'] ?? '', 'address' => $iv['address'] ?? ''];
+  }
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
@@ -43,7 +47,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   }
   if (!$free && !in_array($old['method'], $methods, true)) $errors[] = 'Bir ödeme yöntemi seçin.';
   $inv = $free ? [] : invoice_from_post($errors);
-  if (empty($_POST['kosul'])) $errors[] = 'Katılım koşullarını ve aydınlatma metnini onaylayın.';
+  if (empty($_POST['kosul'])) $errors[] = $free ? 'Katılım koşullarını ve aydınlatma metnini onaylayın.' : 'Katılım koşullarını, mesafeli satış sözleşmesini ve aydınlatma metnini onaylayın.';
   if (mb_strlen($old['note']) > 500) $errors[] = 'Not en fazla 500 karakter olabilir.';
   if (!$errors && !rate_hit('kayit:' . client_hash(), 12, 5)) $errors[] = 'Kısa sürede çok fazla deneme yaptınız, biraz sonra tekrar deneyin.';
 
@@ -85,6 +89,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       }
       require_once __DIR__ . '/inc/mail.php';
       mail_registration($r, $ev);
+      // Kartla ödemede doğrudan iyzico ödeme sayfasına geçilir
+      if ($r['method'] === 'iyzico' && $r['status'] === 'beklemede') { header('Location: /odeme.php?kod=' . rawurlencode($r['code']) . '&k=' . reg_key($r), true, 303); exit; }
       header('Location: ' . ticket_url($r, !$me) . (!$me ? '&' : '?') . 'yeni=1', true, 303);
       exit;
     }
@@ -151,32 +157,39 @@ include __DIR__ . '/inc/header.php';
           <?php endif; ?>
           <label class="field">Telefon<input type="tel" name="phone" value="<?= e($old['phone']) ?>" required autocomplete="tel" placeholder="05xx xxx xx xx"></label>
           <label class="field">Notunuz <span class="opt-l">(isteğe bağlı: alerji, özel durum, soru)</span><textarea name="note" rows="2" maxlength="500"><?= e($old['note']) ?></textarea></label>
-          <?php if (!$free): ?>
-            <details class="invbox"<?= $invOld['corp'] ? ' open' : '' ?>>
-              <summary><label class="check"><input type="checkbox" name="inv_corp" value="1" data-inv-toggle<?= $invOld['corp'] ? ' checked' : '' ?>> Şirket adına fatura istiyorum</label></summary>
-              <p class="muted small">İşaretlemezseniz fatura yukarıdaki ad soyada kesilir.</p>
-              <div class="grid2">
-                <label class="field">Şirket unvanı<input name="inv_title" value="<?= e($invOld['title']) ?>" maxlength="160" autocomplete="organization"></label>
-                <label class="field">Vergi dairesi<input name="inv_tax_office" value="<?= e($invOld['tax_office']) ?>" maxlength="60"></label>
-                <label class="field">Vergi no / T.C. kimlik no<input name="inv_tax_no" value="<?= e($invOld['tax_no']) ?>" inputmode="numeric" pattern="\d{10,11}" maxlength="11"></label>
-                <label class="field">Fatura adresi<input name="inv_address" value="<?= e($invOld['address']) ?>" maxlength="300" autocomplete="street-address"></label>
-              </div>
-            </details>
-          <?php endif; ?>
         </fieldset>
 
-        <?php if (!$free): ?>
+        <?php if (!$free): $corp = $invOld['type'] === 'kurumsal'; ?>
+        <fieldset class="fs" data-inv>
+          <legend><span class="fs__n">4</span>Fatura bilgileri</legend>
+          <div class="seg-radio inv-type" role="radiogroup" aria-label="Fatura türü">
+            <label><input type="radio" name="inv_type" value="bireysel" data-inv-type<?= !$corp ? ' checked' : '' ?>><span>Bireysel</span></label>
+            <label><input type="radio" name="inv_type" value="kurumsal" data-inv-type<?= $corp ? ' checked' : '' ?>><span>Şirket adına</span></label>
+          </div>
+          <div data-inv-group="bireysel"<?= $corp ? ' hidden' : '' ?>>
+            <label class="field">T.C. kimlik no<input name="inv_tckn" value="<?= e($invOld['tckn']) ?>" inputmode="numeric" pattern="\d{11}" maxlength="11" autocomplete="off"></label>
+            <p class="muted small">Fatura <?= $me ? e($me['name']) : 'yukarıdaki ad soyad' ?> adına kesilir. e-Arşiv fatura için T.C. kimlik numaranız gereklidir.</p>
+          </div>
+          <div class="grid2" data-inv-group="kurumsal"<?= !$corp ? ' hidden' : '' ?>>
+            <label class="field">Şirket unvanı<input name="inv_title" value="<?= e($invOld['title']) ?>" maxlength="160" autocomplete="organization"></label>
+            <label class="field">Vergi dairesi<input name="inv_tax_office" value="<?= e($invOld['tax_office']) ?>" maxlength="60"></label>
+            <label class="field">Vergi no <span class="opt-l">(şahıs şirketinde T.C. kimlik no)</span><input name="inv_tax_no" value="<?= e($invOld['tax_no']) ?>" inputmode="numeric" pattern="\d{10,11}" maxlength="11"></label>
+          </div>
+          <label class="field">Fatura adresi <span class="opt-l">(il ve ilçe yeterli)</span><input name="inv_address" value="<?= e($invOld['address']) ?>" maxlength="300" required autocomplete="street-address"></label>
+          <p class="muted small">Faturanız e-Arşiv fatura olarak e-posta adresinize gönderilir.</p>
+        </fieldset>
+
         <fieldset class="fs">
-          <legend><span class="fs__n">4</span>Ödeme</legend>
+          <legend><span class="fs__n">5</span>Ödeme</legend>
           <div class="opts">
             <?php foreach ($methods as $m): ?>
-              <label class="opt opt--row"><input type="radio" name="method" value="<?= $m ?>"<?= $old['method'] === $m ? ' checked' : '' ?> required><span class="opt__body"><strong><?= e(PAY_METHODS[$m]) ?></strong><span><?= e(['havale' => 'Kaydınızdan sonra hesap bilgileri gösterilir. Ödemeniz onaylanınca kaydınız kesinleşir.', 'yerinde' => 'Ücreti etkinlik günü nakit ya da kartla ödersiniz.', 'link' => 'Kaydınızdan sonra güvenli ödeme sayfasına yönlendirilirsiniz.'][$m]) ?></span></span></label>
+              <label class="opt opt--row"><input type="radio" name="method" value="<?= $m ?>"<?= $old['method'] === $m ? ' checked' : '' ?> required><span class="opt__body"><strong><?= e(PAY_METHODS[$m]) ?></strong><span><?= e(['havale' => 'Kaydınızdan sonra hesap bilgileri gösterilir. Ödemeniz onaylanınca kaydınız kesinleşir.', 'yerinde' => 'Ücreti etkinlik günü nakit ya da kartla ödersiniz.', 'link' => 'Kaydınızdan sonra güvenli ödeme sayfasına yönlendirilirsiniz.', 'iyzico' => 'iyzico güvenli ödeme sayfasında kartınızla ödersiniz. Ödeme alınınca kaydınız hemen kesinleşir.'][$m]) ?></span></span></label>
             <?php endforeach; ?>
           </div>
         </fieldset>
         <?php endif; ?>
 
-        <label class="consent"><input type="checkbox" name="kosul" value="1"<?= !empty($_POST['kosul']) ? ' checked' : '' ?> required><span><a href="/katilim-kosullari/" target="_blank">Katılım koşullarını</a> ve <a href="/gizlilik/" target="_blank">aydınlatma metnini</a> okudum, kabul ediyorum.</span></label>
+        <label class="consent"><input type="checkbox" name="kosul" value="1"<?= !empty($_POST['kosul']) ? ' checked' : '' ?> required><span><a href="/katilim-kosullari/" target="_blank">Katılım koşullarını</a>, <?php if (!$free): ?><a href="/mesafeli-satis/" target="_blank">ön bilgilendirme formu ve mesafeli satış sözleşmesini</a> ve <?php endif; ?><a href="/gizlilik/" target="_blank">aydınlatma metnini</a> okudum, kabul ediyorum.</span></label>
         <div class="join__submit"><button class="btn btn--lg" type="submit" data-join-btn>Kaydımı oluştur</button><p class="cform__msg" role="status" data-form-msg></p></div>
         <?php endif; ?>
       </form>
