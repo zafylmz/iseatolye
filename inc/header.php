@@ -14,17 +14,23 @@ $nav = [
   '/etkinlikler/' => 'Etkinlikler',
   '/takvim/' => 'Takvim',
   '/galeri/' => 'Galeri',
-  '/mekanlar/' => 'Mekanlar',
   '/kurumsal/' => 'Kurumsal',
   '/hakkimizda/' => 'Hakkımızda',
+  '/mekanlar/' => 'Mekanlar',
   '/blog/' => 'Blog',
   '/iletisim/' => 'İletişim',
 ];
 if (!is_file(DATA . '/blog.json') || !array_filter(json_read(DATA . '/blog.json')['posts'] ?? [], fn($p) => !empty($p['published']))) unset($nav['/blog/']);
-// Galeri, gösterilecek albüm varsa menüde görünür
-$hasGallery = (bool) array_filter(catalog()['events'] ?? [], fn($ev) => !empty($ev['gallery']) && ($ev['status'] ?? '') !== 'taslak') || (bool) array_filter(json_read(DATA . '/medya.json')['albums'] ?? [], fn($a) => !empty($a['public']));
-if (!$hasGallery) unset($nav['/galeri/']);
+// Üst menü sade kalsın: ilk dört bağlantı görünür, diğerleri "Hakkımızda" açılır listesinde (telefonda ikinci grup)
+$navMore = array_intersect_key([
+  '/hakkimizda/' => 'Biz kimiz, nasıl çalışıyoruz',
+  '/mekanlar/' => 'Atölyelerin yapıldığı yerler',
+  '/blog/' => 'Yazılar, ipuçları ve duyurular',
+  '/iletisim/' => 'Soru, öneri ve iş birlikleri',
+], $nav);
+$navMain = array_diff_key($nav, $navMore);
 $isOn = fn($href) => $href === '/etkinlikler/' ? (str_starts_with($path, '/etkinlik')) : str_starts_with($path, rtrim($href, '/'));
+$moreOn = (bool) array_filter(array_keys($navMore), $isOn);
 ?><!doctype html>
 <html lang="tr">
 <head>
@@ -60,14 +66,33 @@ $isOn = fn($href) => $href === '/etkinlikler/' ? (str_starts_with($path, '/etkin
     <div class="wrap header__bar">
       <a class="brand" href="/" aria-label="<?= e($brand) ?>, ana sayfa"><?php include __DIR__ . '/logo.php'; ?></a>
       <nav class="nav" id="menu" aria-label="Ana menü">
-        <?php foreach ($nav as $href => $label): ?>
-          <a href="<?= $href ?>"<?= $isOn($href) ? ' aria-current="page"' : '' ?>><?= $label ?></a>
-        <?php endforeach; ?>
+        <div class="nav__main">
+          <?php foreach ($navMain as $href => $label): ?>
+            <a class="nav__link" href="<?= $href ?>"<?= $isOn($href) ? ' aria-current="page"' : '' ?>><?= $label ?><?= icon('sag') ?></a>
+          <?php endforeach; ?>
+        </div>
+        <div class="nav__group">
+          <button class="nav__more<?= $moreOn ? ' is-on' : '' ?>" type="button" aria-expanded="false" aria-controls="nav-more">Hakkımızda<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button>
+          <div class="nav__drop" id="nav-more">
+            <p class="nav__label">İse Atölye</p>
+            <?php foreach ($navMore as $href => $hint): ?>
+              <a href="<?= $href ?>"<?= $isOn($href) ? ' aria-current="page"' : '' ?>><strong><?= $nav[$href] ?></strong><span><?= $hint ?></span></a>
+            <?php endforeach; ?>
+          </div>
+        </div>
         <div class="nav__member">
           <?php if ($me): ?>
-            <a href="/hesabim/">Hesabım</a><a href="<?= e(user_url($me)) ?>">Profilim</a><a href="/cikis/">Çıkış yap</a>
+            <p class="nav__label">Hesabım</p>
+            <div class="nav__me"><?= avatar($me) ?><span><strong><?= e($me['name']) ?></strong><span><?= e($me['email'] ?? '') ?></span></span></div>
+            <div class="nav__acts">
+              <a href="/hesabim/"><?= icon('bilet') ?>Etkinliklerim</a>
+              <a href="<?= e(user_url($me)) ?>"><?= icon('kisi') ?>Profilim</a>
+              <a href="/hesabim/?s=profil"><?= icon('ayar') ?>Hesap ayarları</a>
+              <a href="/cikis/"><?= icon('cikis') ?>Çıkış yap</a>
+            </div>
           <?php else: ?>
-            <a class="btn btn--sm" href="/uye-ol/">Üye ol</a><a class="btn btn--ghost btn--sm" href="/giris/">Giriş yap</a>
+            <p class="nav__note">Üye olun; katıldığınız etkinlikleri, biletlerinizi ve takviminizi tek yerden yönetin.</p>
+            <div class="nav__btns"><a class="btn" href="/uye-ol/">Üye ol</a><a class="btn btn--ghost" href="/giris/">Giriş yap</a></div>
           <?php endif; ?>
         </div>
       </nav>

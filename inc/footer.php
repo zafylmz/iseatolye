@@ -14,6 +14,7 @@
         <p class="footer__title">Etkinlikler</p>
         <a href="/etkinlikler/">Yaklaşan etkinlikler</a>
         <a href="/takvim/">Etkinlik takvimi</a>
+        <a href="/galeri/">Galeri</a>
         <a href="/mekanlar/">Mekanlar</a>
         <a href="/etkinlikler/?gecmis=1">Geçmiş etkinlikler</a>
       </nav>
