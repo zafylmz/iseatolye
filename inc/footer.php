@@ -33,10 +33,12 @@
         <?php if (trim($c['contact']['hours'] ?? '') !== ''): ?><span class="muted"><?= e($c['contact']['hours']) ?></span><?php endif; ?>
       </div>
     </div>
+    <?php /* Kartla ödeme anlaşması yapılınca geri açılacak (iyzico logosu + kart logoları).
     <div class="wrap footer__pay" aria-label="Ödeme yöntemleri">
       <img src="/assets/img/iyzico.png" alt="iyzico ile öde" width="56" height="24" loading="lazy">
       <img src="/assets/img/kartlar.png" alt="Mastercard, Visa, American Express, Troy" width="244" height="24" loading="lazy">
     </div>
+    */ ?>
     <div class="wrap footer__bottom">
       <span>© <?= date('Y') ?> <?= e($c['brand']['name'] ?? 'İSE ATÖLYE') ?>. Tüm hakları saklıdır.</span>
       <nav aria-label="Yasal"><a href="/gizlilik/">Gizlilik ve KVKK</a><a href="/katilim-kosullari/">Katılım koşulları</a><a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a><a class="footer__web" href="https://www.zaferyilmaz.com.tr/" target="_blank" rel="noopener" aria-label="Web: zaferyilmaz.com.tr">Web: <svg viewBox="0 0 300 300" width="16" height="16" aria-hidden="true"><path fill="#2dafe6" d="M299 26.54V213.39L140.72 213.58zM159.83 86.63L1.74 273.46H1V86.63z"/></svg></a></nav>
