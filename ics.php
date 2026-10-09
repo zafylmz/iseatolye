@@ -2,6 +2,7 @@
 // Etkinlik oturumunu takvim dosyası (.ics) olarak indirir.
 require_once __DIR__ . '/inc/bootstrap.php';
 require_once __DIR__ . '/inc/events.php';
+header('X-Robots-Tag: noindex');
 $ev = event_by_slug((string) ($_GET['slug'] ?? ''));
 if (!$ev || !event_visible($ev)) { http_response_code(404); exit; }
 $list = is_package($ev) ? event_sessions($ev, false) : array_filter([session_by_id($ev, (string) ($_GET['o'] ?? '')) ?? next_session($ev)]);

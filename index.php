@@ -27,7 +27,18 @@ $memberCount = count(array_filter(users_all(), 'user_public'));
 $posts = [];
 if (data_exists(DATA . '/blog.json')) { require_once __DIR__ . '/inc/blog.php'; $posts = array_slice(blog_published(), 0, 3); }
 
-$ld = ['@context' => 'https://schema.org', '@type' => 'Organization', 'name' => $c['brand']['name'], 'url' => site_url('/'), 'email' => $c['contact']['email'] ?? '', 'telephone' => $c['contact']['phone'] ?? '', 'sameAs' => array_values(array_filter(array_column($c['socials'] ?? [], 'url')))];
+$ld = [
+  array_filter([
+    '@context' => 'https://schema.org', '@type' => ['Organization', 'LocalBusiness'], '@id' => site_url('/#isletme'),
+    'name' => $c['brand']['name'], 'url' => site_url('/'), 'description' => $c['brand']['description'] ?? '',
+    'logo' => site_url('/apple-touch-icon.png'), 'image' => site_url(($c['brand']['og_image'] ?? '') ?: '/og.jpg'),
+    'email' => trim((string) ($c['contact']['email'] ?? '')), 'telephone' => trim((string) ($c['contact']['phone'] ?? '')),
+    'address' => array_filter(['@type' => 'PostalAddress', 'streetAddress' => trim((string) ($c['contact']['address'] ?? '')), 'addressLocality' => 'Silivri', 'addressRegion' => 'İstanbul', 'addressCountry' => 'TR']),
+    'areaServed' => 'İstanbul',
+    'sameAs' => array_values(array_filter(array_column($c['socials'] ?? [], 'url'))),
+  ]),
+  ['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => $c['brand']['name'], 'url' => site_url('/'), 'inLanguage' => 'tr-TR', 'publisher' => ['@id' => site_url('/#isletme')]],
+];
 $headExtra = '<script type="application/ld+json">' . json_encode($ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>';
 $title = $c['brand']['name'] . ' · ' . $c['brand']['tagline'];
 ob_start(); include __DIR__ . '/inc/cal-modal.php'; $bodyEnd = ob_get_clean();

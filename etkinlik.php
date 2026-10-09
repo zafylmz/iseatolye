@@ -46,14 +46,16 @@ foreach ($sessions as $s) {
     'startDate' => date('c', session_ts($s)), 'endDate' => date('c', session_ts($s, true)),
     'eventStatus' => 'https://schema.org/' . (($ev['status'] === 'iptal' || ($s['status'] ?? '') === 'iptal') ? 'EventCancelled' : ($ev['status'] === 'ertelendi' ? 'EventPostponed' : 'EventScheduled')),
     'eventAttendanceMode' => 'https://schema.org/' . ($online ? 'OnlineEventAttendanceMode' : 'OfflineEventAttendanceMode'),
-    'location' => $online ? ['@type' => 'VirtualLocation', 'url' => site_url(event_url($ev))] : ['@type' => 'Place', 'name' => $v['name'] ?? (trim($s['place'] ?? '') ?: 'Silivri'), 'address' => trim(implode(', ', array_filter([$v['address'] ?? '', $v['district'] ?? 'Silivri', $v['city'] ?? 'İstanbul'])))],
+    'location' => $online ? ['@type' => 'VirtualLocation', 'url' => site_url(event_url($ev))] : ['@type' => 'Place', 'name' => $v['name'] ?? (trim($s['place'] ?? '') ?: 'Silivri'), 'address' => array_filter(['@type' => 'PostalAddress', 'streetAddress' => trim((string) ($v['address'] ?? '')), 'addressLocality' => trim((string) ($v['district'] ?? '')) ?: 'Silivri', 'addressRegion' => trim((string) ($v['city'] ?? '')) ?: 'İstanbul', 'addressCountry' => 'TR'])],
     'image' => [site_url($image)], 'url' => site_url(event_url($ev)),
     'organizer' => ['@type' => 'Organization', 'name' => $c['brand']['name'], 'url' => site_url('/')],
-    'offers' => array_map(fn($t) => ['@type' => 'Offer', 'name' => $t['name'], 'price' => (float) $t['price'], 'priceCurrency' => 'TRY', 'url' => site_url($joinUrl), 'availability' => 'https://schema.org/' . (session_state($ev, $s) === 'dolu' ? 'SoldOut' : 'InStock')], $tickets),
-  ] + ($instructors ? ['performer' => array_map(fn($i) => ['@type' => 'Person', 'name' => $i['name']], $instructors)] : []);
+  ] + ($tickets ? ['offers' => array_map(fn($t) => ['@type' => 'Offer', 'name' => $t['name'], 'price' => (float) $t['price'], 'priceCurrency' => 'TRY', 'url' => site_url($joinUrl), 'validFrom' => date('c', strtotime((string) ($ev['created'] ?? '')) ?: time()), 'availability' => 'https://schema.org/' . (in_array(session_state($ev, $s), ['dolu', 'gecti', 'kapali'], true) ? 'SoldOut' : 'InStock')], $tickets)] : []) + ($instructors ? ['performer' => array_map(fn($i) => ['@type' => 'Person', 'name' => $i['name']], $instructors)] : []);
 }
+$ld[] = breadcrumb_ld(['Etkinlikler' => '/etkinlikler/', $ev['title'] => event_url($ev)]);
 $headExtra = '<script type="application/ld+json">' . json_encode(count($ld) === 1 ? $ld[0] : $ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>';
-$ogType = 'article';
+if (!empty($ev['cover'])) $headExtra .= '<link rel="preload" as="image" href="' . e($ev['cover']) . '" fetchpriority="high">';
+$imageAlt = $ev['title'];
+$canonical = event_url($ev);
 include __DIR__ . '/inc/header.php';
 
 $cta = function () use ($ev, $state, $myReg, $joinUrl, $me, $bookable) {
@@ -76,7 +78,7 @@ $cta = function () use ($ev, $state, $myReg, $joinUrl, $me, $bookable) {
     <div class="wrap event__grid">
       <div class="event__main">
         <?php if (!empty($ev['cover'])): ?>
-          <figure class="event__cover"><img src="<?= e($ev['cover']) ?>" alt="<?= e($ev['title']) ?>" width="1600" height="1100" data-zoom></figure>
+          <figure class="event__cover"><img src="<?= e($ev['cover']) ?>" alt="<?= e($ev['title']) ?>" width="1600" height="1100" fetchpriority="high" decoding="async" data-zoom></figure>
         <?php endif; ?>
         <?php if (!empty($ev['gallery'])): ?>
           <?php require_once __DIR__ . '/inc/media.php'; $gm = media_meta()['items']; ?><div class="event__gallery" data-zoom-group><?php foreach ($ev['gallery'] as $g): ?><button type="button" class="event__thumb" data-zoom-src="<?= e($g) ?>" data-zoom-cap="<?= e($gm[$g]['title'] ?? '') ?>"><img src="<?= e(thumb_url($g)) ?>" alt="<?= e($gm[$g]['title'] ?? '') ?>" loading="lazy"></button><?php endforeach; ?></div><?php if (count($ev['gallery']) > 8): ?><a class="link-more" href="/galeri/<?= e(rawurlencode($ev['slug'])) ?>/">Bütün fotoğrafları gör (<?= count($ev['gallery']) ?>)</a><?php endif; ?>

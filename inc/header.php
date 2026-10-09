@@ -9,6 +9,10 @@ $title = $title ?? ($brand . ' · ' . ($c['brand']['tagline'] ?? ''));
 $description = $description ?? ($c['brand']['description'] ?? '');
 $image = $image ?? (($c['brand']['og_image'] ?? '') ?: '/og.jpg');
 $path = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+// Tek bir kanonik adres: küçük harf, sonda eğik çizgi (aynı sayfanın /Etkinlikler, /etkinlikler gibi kopyaları tek adreste birleşir)
+$canonPhp = ['index' => '/', 'etkinlikler' => '/etkinlikler/', 'takvim' => '/takvim/', 'galeri' => '/galeri/', 'mekanlar' => '/mekanlar/', 'blog' => '/blog/', 'kurumsal' => '/kurumsal/', 'hakkimizda' => '/hakkimizda/', 'iletisim' => '/iletisim/', 'gizlilik' => '/gizlilik/', 'katilim-kosullari' => '/katilim-kosullari/', 'mesafeli-satis' => '/mesafeli-satis/'];
+$canon = $canonical ?? (str_ends_with($path, '.php') ? ($canonPhp[basename(strtolower($path), '.php')] ?? strtolower($path)) : rtrim(strtolower($path), '/') . '/');
+$canonUrl = site_url($canon);
 $me = current_user();
 $nav = [
   '/etkinlikler/' => 'Etkinlikler',
@@ -38,7 +42,7 @@ $moreOn = (bool) array_filter(array_keys($navMore), $isOn);
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($title) ?></title>
   <meta name="description" content="<?= e($description) ?>">
-  <link rel="canonical" href="<?= e(site_url($path)) ?>">
+  <link rel="canonical" href="<?= e($canonUrl) ?>">
   <meta name="theme-color" content="#faf6f0">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -47,10 +51,17 @@ $moreOn = (bool) array_filter(array_keys($navMore), $isOn);
   <meta property="og:locale" content="tr_TR">
   <meta property="og:title" content="<?= e($title) ?>">
   <meta property="og:description" content="<?= e($description) ?>">
-  <meta property="og:image" content="<?= e(site_url($image)) ?>">
+  <meta property="og:url" content="<?= e($canonUrl) ?>">
+  <meta property="og:image" content="<?= e(str_starts_with($image, 'http') ? $image : site_url($image)) ?>">
+  <meta property="og:image:alt" content="<?= e($imageAlt ?? $title) ?>">
   <meta name="twitter:card" content="summary_large_image">
-  <?php if (!empty($noindex)): ?><meta name="robots" content="noindex"><?php endif; ?>
+  <meta name="twitter:title" content="<?= e($title) ?>">
+  <meta name="twitter:description" content="<?= e($description) ?>">
+  <meta name="twitter:image" content="<?= e(str_starts_with($image, 'http') ? $image : site_url($image)) ?>">
+  <?= $ogExtra ?? '' ?>
+  <?php if (!empty($noindex)): ?><meta name="robots" content="noindex, follow"><?php endif; ?>
   <link rel="preload" href="/assets/fonts/montserrat-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/montserrat-latin-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="<?= e(asset('/assets/style.css')) ?>">
   <?php if (isset($nav['/blog/'])): ?><link rel="alternate" type="application/rss+xml" title="<?= e($brand) ?> · Blog" href="/blog/rss.xml"><?php endif; ?>

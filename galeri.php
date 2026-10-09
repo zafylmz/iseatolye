@@ -13,6 +13,7 @@ if ($slug !== '') {
   $a = gallery_album($slug);
   if (!$a) { http_response_code(404); include __DIR__ . '/404.php'; exit; }
   $title = $a['name'] . ' · Galeri · ' . $c['brand']['name'];
+  $canonical = '/galeri/' . rawurlencode($a['slug']) . '/';
   $description = $a['name'] . ': ' . count($a['images']) . ' fotoğraf. ' . ($a['text'] !== '' ? $a['text'] : $c['brand']['name'] . ' atölyelerinden kareler.');
   $image = $a['cover'];
   include __DIR__ . '/inc/header.php'; ?>

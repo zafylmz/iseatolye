@@ -24,16 +24,20 @@ $ts = time();
 $site = site_url();
 
 $title = $post['title'] . ' · ' . $c['brand']['name'];
+$canonical = '/blog/' . rawurlencode($post['slug'] ?? $slug) . '/';
 $description = trim($post['excerpt'] ?? '') ?: mb_substr(blog_plain($post['body'] ?? ''), 0, 160);
 $image = $post['cover'] ?: '/og.jpg';
 $ogType = 'article';
 $ld = [
   '@context' => 'https://schema.org', '@type' => 'BlogPosting',
   'headline' => $post['title'], 'description' => $description,
-  'datePublished' => $post['date'], 'dateModified' => $post['updated'] ?? $post['date'],
-  'image' => $site . $image, 'mainEntityOfPage' => $site . '/blog/' . $slug . '/',
-  'author' => ['@type' => 'Organization', 'name' => $c['brand']['name'], 'url' => $site . '/'],
+  'datePublished' => date('c', strtotime((string) $post['date']) ?: time()), 'dateModified' => date('c', strtotime((string) ($post['updated'] ?? $post['date'])) ?: time()),
+  'image' => str_starts_with($image, 'http') ? $image : site_url($image), 'mainEntityOfPage' => site_url('/blog/' . $slug . '/'), 'inLanguage' => 'tr-TR',
+  'author' => ['@type' => 'Organization', 'name' => $c['brand']['name'], 'url' => site_url('/')],
+  'publisher' => ['@type' => 'Organization', 'name' => $c['brand']['name'], 'logo' => ['@type' => 'ImageObject', 'url' => site_url('/apple-touch-icon.png')]],
 ];
+$ld = [$ld, breadcrumb_ld(['Blog' => '/blog/', $post['title'] => '/blog/' . $slug . '/'])];
+$ogExtra = '<meta property="article:published_time" content="' . e($ld[0]['datePublished']) . '"><meta property="article:modified_time" content="' . e($ld[0]['dateModified']) . '">';
 $headExtra = '<script type="application/ld+json">' . json_encode($ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>';
 include __DIR__ . '/inc/header.php';
 ?>

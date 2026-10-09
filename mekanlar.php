@@ -11,6 +11,7 @@ if ($slug !== '') {
   $pastHere = array_slice(array_values(array_filter(past_events(), fn($ev) => in_array($v['id'], array_column($ev['sessions'] ?? [], 'venue'), true))), 0, 6);
   $map = map_url($v);
   $title = $v['name'] . ' · Mekanlar · ' . $c['brand']['name'];
+  $canonical = venue_url($v);
   $description = $v['name'] . ' mekânında düzenlenen İse Atölye etkinlikleri.';
   include __DIR__ . '/inc/header.php'; ?>
   <section class="wrap venue-head">

@@ -49,7 +49,7 @@ RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
 </IfModule>
 
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json application/xml text/xml application/rss+xml text/plain text/calendar
 </IfModule>
 <IfModule mod_expires.c>
   ExpiresActive On
@@ -59,4 +59,6 @@ RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
   ExpiresByType image/jpeg "access plus 1 month"
   ExpiresByType image/png "access plus 1 month"
   ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/avif "access plus 1 month"
 </IfModule>

@@ -481,3 +481,10 @@ function send_mail(string $to, string $subject, string $text): bool {
 function admin_email(): string {
   return trim((string) setting('notify_email', '')) ?: (string) (content()['contact']['email'] ?? '');
 }
+
+// Arama sonuçlarında görünen sayfa yolu (BreadcrumbList). $items: ['Başlık' => '/adres/', ...]; Ana sayfa başa eklenir.
+function breadcrumb_ld(array $items): array {
+  $list = []; $i = 1;
+  foreach (['Ana sayfa' => '/'] + $items as $name => $url) $list[] = ['@type' => 'ListItem', 'position' => $i++, 'name' => (string) $name, 'item' => site_url($url)];
+  return ['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $list];
+}
