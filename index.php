@@ -25,7 +25,7 @@ $recent = array_slice($recent, 0, 3);
 $memberCount = count(array_filter(users_all(), 'user_public'));
 
 $posts = [];
-if (is_file(DATA . '/blog.json')) { require_once __DIR__ . '/inc/blog.php'; $posts = array_slice(blog_published(), 0, 3); }
+if (data_exists(DATA . '/blog.json')) { require_once __DIR__ . '/inc/blog.php'; $posts = array_slice(blog_published(), 0, 3); }
 
 $ld = ['@context' => 'https://schema.org', '@type' => 'Organization', 'name' => $c['brand']['name'], 'url' => site_url('/'), 'email' => $c['contact']['email'] ?? '', 'telephone' => $c['contact']['phone'] ?? '', 'sameAs' => array_values(array_filter(array_column($c['socials'] ?? [], 'url')))];
 $headExtra = '<script type="application/ld+json">' . json_encode($ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>';

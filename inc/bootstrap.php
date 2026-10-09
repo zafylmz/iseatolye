@@ -83,10 +83,11 @@ function https(): bool {
 }
 
 // ---------- Veritabanı (MySQL) ----------
-// Panel > Sistem kontrolü'nden bağlanınca üyeler, katılımlar, yorumlar, ilgilenenler, mesajlar ve blog etkileşimleri
-// MySQL'de tutulur. Bağlantı bilgisi data/db.php dosyasındadır. Bağlı değilse aynı veriler data/ altındaki dosyalardadır.
+// Panel > Sistem kontrolü'nden bağlanınca sitenin bütün verileri (içerik, etkinlikler, blog, medya, üyeler, katılımlar,
+// yorumlar, ilgilenenler, mesajlar) MySQL'de tutulur. Bağlantı bilgisi data/db.php dosyasındadır.
+// Bağlı değilse aynı veriler data/ altındaki dosyalardadır. Şifreler ve anahtarlar her zaman data/ altındaki PHP dosyalarında kalır.
 const DB_FILE = DATA . '/db.php';
-const DB_DOCS = ['users', 'registrations', 'comments', 'interests', 'messages', 'blog-comments', 'blog-likes', 'resets'];
+const DB_DOCS = ['content', 'events', 'blog', 'medya', 'users', 'registrations', 'comments', 'interests', 'messages', 'blog-comments', 'blog-likes', 'resets'];
 
 function db_config(): ?array {
   static $c = false;
@@ -121,8 +122,26 @@ function db_doc(string $file): ?string {
   return in_array($n, DB_DOCS, true) && db_config() ? $n : null;
 }
 
+// Belgeyi veritabanından okur. Veritabanında henüz yoksa ve data/ altında dosyası varsa önce onu aktarır
+// (veritabanı sonradan genişletildiğinde dosyada kalan veriler ilk açılışta kendiliğinden taşınır).
+// Aktarılan dosya silinmez, data/yedek/ altına taşınır. Belge hiç yoksa false döner.
+function db_fetch(string $n, string $file) {
+  $q = db()->prepare('SELECT veri FROM ise_belgeler WHERE ad = ?');
+  $q->execute([$n]);
+  $v = $q->fetchColumn();
+  if ($v !== false || !is_file($file)) return $v;
+  $raw = (string) @file_get_contents($file);
+  if (is_array(json_decode($raw, true))) {
+    db()->prepare('INSERT IGNORE INTO ise_belgeler (ad, veri, guncel) VALUES (?, ?, NOW())')->execute([$n, $raw]);
+    if (!is_dir(DATA . '/yedek')) @mkdir(DATA . '/yedek', 0755, true);
+    @rename($file, DATA . '/yedek/' . $n . '-veritabanina-tasindi-' . date('Ymd-His') . '.json') || @rename($file, $file . '.tasindi');
+  } elseif ($raw !== '') error_log('Veritabanına aktarılamadı, dosya bozuk: ' . basename($file));
+  $q->execute([$n]);
+  return $q->fetchColumn();
+}
+
 function data_exists(string $file): bool {
-  if ($n = db_doc($file)) { $q = db()->prepare('SELECT 1 FROM ise_belgeler WHERE ad = ?'); $q->execute([$n]); return (bool) $q->fetchColumn(); }
+  if ($n = db_doc($file)) return db_fetch($n, $file) !== false;
   return is_file($file);
 }
 
@@ -165,9 +184,7 @@ function db_update(string $n, callable $fn, array $default) {
 // ---------- JSON dosyaları ----------
 function json_read(string $file, array $default = []): array {
   if ($n = db_doc($file)) {
-    $q = db()->prepare('SELECT veri FROM ise_belgeler WHERE ad = ?');
-    $q->execute([$n]);
-    $d = json_decode((string) $q->fetchColumn(), true);
+    $d = json_decode((string) db_fetch($n, $file), true);
     return is_array($d) ? $d : $default;
   }
   if (!is_file($file)) return $default;
@@ -178,7 +195,7 @@ function json_read(string $file, array $default = []): array {
 // Dosyayı kilitleyip okur, $fn ile değiştirir ve geri yazar. $fn'in dönüş değerini döndürür.
 // Yeni içerik önce geçici dosyaya yazılır, sonra eskisinin yerine konur: yazma yarıda kalırsa (kota dolması vb.) eski dosya bozulmaz.
 function json_update(string $file, callable $fn, array $default = []) {
-  if ($n = db_doc($file)) return db_update($n, $fn, $default);
+  if ($n = db_doc($file)) { db_fetch($n, $file); return db_update($n, $fn, $default); }
   if (!is_dir(dirname($file))) @mkdir(dirname($file), 0755, true);
   $lock = @fopen($file . '.lock', 'c');
   if (!$lock) throw new RuntimeException('Kayıt dosyası açılamadı. data klasörünün yazma iznini kontrol edin.');

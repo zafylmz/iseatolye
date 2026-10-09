@@ -9,7 +9,7 @@ require_once __DIR__ . '/inc/media.php';
 $albums = gallery_albums();
 if ($albums) $urls[] = '/galeri/';
 foreach ($albums as $a) $urls[] = '/galeri/' . rawurlencode($a['slug']) . '/';
-if (is_file(DATA . '/blog.json')) {
+if (data_exists(DATA . '/blog.json')) {
   require_once __DIR__ . '/inc/blog.php';
   if (blog_published()) $urls[] = '/blog/';
   foreach (blog_published() as $p) $urls[] = '/blog/' . rawurlencode($p['slug']) . '/';

@@ -20,7 +20,7 @@ $nav = [
   '/blog/' => 'Blog',
   '/iletisim/' => 'İletişim',
 ];
-if (!is_file(DATA . '/blog.json') || !array_filter(json_read(DATA . '/blog.json')['posts'] ?? [], fn($p) => !empty($p['published']))) unset($nav['/blog/']);
+if (!data_exists(DATA . '/blog.json') || !array_filter(json_read(DATA . '/blog.json')['posts'] ?? [], fn($p) => !empty($p['published']))) unset($nav['/blog/']);
 // Üst menü sade kalsın: ilk dört bağlantı görünür, diğerleri "Hakkımızda" açılır listesinde (telefonda ikinci grup)
 $navMore = array_intersect_key([
   '/hakkimizda/' => 'Biz kimiz, nasıl çalışıyoruz',

@@ -88,8 +88,7 @@ function hidden(string $tok, string $action, array $extra = []): string {
 // Her kayıttan önce dosyanın bir kopyası data/yedek/ altına alınır; her dosyadan son 20 kopya tutulur.
 function backup_file(string $file): void {
   if ($n = db_doc($file)) {
-    $q = db()->prepare('SELECT veri FROM ise_belgeler WHERE ad = ?'); $q->execute([$n]);
-    if (($v = $q->fetchColumn()) !== false) db_backup(db(), $n, (string) $v);
+    if (($v = db_fetch($n, $file)) !== false) db_backup(db(), $n, (string) $v);
     return;
   }
   if (!is_file($file)) return;
@@ -103,6 +102,7 @@ function backup_file(string $file): void {
 
 function write_json(string $file, array $data): void {
   backup_file($file);
+  if (db_doc($file)) { json_update($file, function (array &$d) use ($data) { $d = $data; }); return; }
   $tmp = $file . '.tmp';
   file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
   rename($tmp, $file);
