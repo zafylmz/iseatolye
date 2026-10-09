@@ -6,6 +6,8 @@ $v = fn(string $k) => trim((string) setting($k, '')) ?: '—';
 $ct = $c['contact'] ?? [];
 $brand = $c['brand']['name'] ?? 'İSE ATÖLYE';
 $site = preg_replace('#^https?://#', '', site_url(''));
+require_once __DIR__ . '/inc/paytr.php';
+$kartOn = paytr_on();
 $pol = trim((string) setting('cancel_policy', ''));
 $title = 'Ön bilgilendirme ve mesafeli satış sözleşmesi · ' . $brand;
 $description = 'Etkinlik ve atölye katılım hizmetleri için ön bilgilendirme formu ve mesafeli satış sözleşmesi.';
@@ -38,7 +40,7 @@ include __DIR__ . '/inc/header.php';
     <p>Hizmetin adı, tarihi, saati, yeri, içeriği, bilet türü, kişi sayısı ve vergiler dahil toplam fiyatı etkinlik sayfasında ve kayıt formundaki özet bölümünde gösterilir; kayıt sonrasında Alıcı'ya e-posta ile de gönderilir. Bu bilgiler sözleşmenin ayrılmaz parçasıdır. Fiyatlara KDV dahildir; ek bir teslimat ya da hizmet bedeli alınmaz.</p>
 
     <h2>5. Ödeme</h2>
-    <p>Ödeme, kayıt formunda sunulan yöntemlerle yapılır: banka havalesi / EFT ya da iyzico altyapısıyla kredi veya banka kartı. Kartla ödemelerde kart bilgileri iyzico'nun güvenli ödeme sayfasında girilir; Satıcı kart bilgilerini görmez ve saklamaz. Havale ile ödemede açıklamaya katılım kodunun yazılması gerekir. Ödemesi belirtilen sürede ulaşmayan kayıtlar kontenjandan düşebilir.</p>
+    <p>Ödeme, kayıt formunda sunulan yöntemlerle yapılır: banka havalesi / EFT<?php if ($kartOn): ?> ya da PayTR Ödeme ve Elektronik Para Kuruluşu A.Ş. altyapısıyla kredi veya banka kartı. Kartla ödemelerde kart bilgileri PayTR'nin 3D Secure korumalı güvenli ödeme sayfasında girilir; Satıcı kart bilgilerini görmez ve saklamaz<?php endif; ?>. Havale ile ödemede açıklamaya katılım kodunun yazılması gerekir. Ödemesi belirtilen sürede ulaşmayan kayıtlar kontenjandan düşebilir.</p>
 
     <h2>6. Hizmetin ifası</h2>
     <p>Hizmet, etkinlik sayfasında belirtilen tarih, saat ve yerde (çevrim içi etkinliklerde belirtilen bağlantı üzerinden) verilir. Kayıt onaylandığında Alıcı'ya katılım kodunu içeren bir e-posta gönderilir; bu kod etkinlik girişinde istenebilir.</p>

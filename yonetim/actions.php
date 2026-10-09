@@ -603,25 +603,27 @@ switch ($action) {
     flash('E-posta hesabı kaydedildi ve ' . $to . ' adresine deneme e-postası gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.');
     redirect('./?s=ayarlar#smtp');
 
-  case 'iyzico':
-    require_once ROOT . '/inc/iyzico.php';
+  case 'paytr':
+    require_once ROOT . '/inc/paytr.php';
     if (post('kaldir') === '1') {
-      if (is_file(IYZICO_FILE)) @unlink(IYZICO_FILE);
+      if (is_file(PAYTR_FILE)) @unlink(PAYTR_FILE);
       flash('Kartla ödeme kapatıldı. Kayıt formunda bu seçenek artık görünmez.');
       redirect('./?s=ayarlar#kart');
     }
-    $old = iyzico_config() ?? [];
+    $old = paytr_config() ?? [];
+    $keep = fn(string $f, string $k) => ($_POST[$f] ?? '') !== '' ? preg_replace('/\s+/', '', (string) $_POST[$f]) : (string) ($old[$k] ?? '');
     $cfg = [
-      'api_key' => preg_replace('/\s+/', '', post('iz_api')),
-      'secret' => ($_POST['iz_secret'] ?? '') !== '' ? preg_replace('/\s+/', '', (string) $_POST['iz_secret']) : (string) ($old['secret'] ?? ''),
-      'sandbox' => post('iz_mode') !== 'live',
+      'merchant_id' => preg_replace('/\D/', '', post('pt_id')),
+      'merchant_key' => $keep('pt_key', 'merchant_key'),
+      'merchant_salt' => $keep('pt_salt', 'merchant_salt'),
+      'test' => post('pt_mode') !== 'live',
     ];
-    if ($cfg['api_key'] === '' || $cfg['secret'] === '') throw new RuntimeException('API anahtarını ve güvenlik anahtarını yazın.');
-    $err = iyzico_test($cfg);
-    if ($err !== '') { flash('Kaydedilmedi, iyzico anahtarları kabul etmedi: ' . $err . ($cfg['sandbox'] ? ' (Deneme ortamı seçili; canlı anahtarlar için "Canlı" seçin.)' : ' (Canlı seçili; deneme anahtarları için "Deneme" seçin.)'), 'err'); redirect('./?s=ayarlar#kart'); }
-    if (@file_put_contents(IYZICO_FILE, "<?php\n// iyzico anahtarları (panelden oluşturuldu). Silerseniz kartla ödeme kapanır.\nreturn " . var_export($cfg, true) . ";\n", LOCK_EX) === false) throw new RuntimeException('data/iyzico.php yazılamadı. data klasörünün yazma iznini kontrol edin.');
-    @chmod(IYZICO_FILE, 0600);
-    flash('iyzico anahtarları doğrulandı ve kaydedildi. Kartla ödeme ' . ($cfg['sandbox'] ? 'deneme ortamında' : 'canlı olarak') . ' açık.');
+    if ($cfg['merchant_id'] === '' || $cfg['merchant_key'] === '' || $cfg['merchant_salt'] === '') throw new RuntimeException('Mağaza no, Mağaza parola (key) ve Mağaza gizli anahtar (salt) alanlarını doldurun.');
+    $err = paytr_test($cfg);
+    if ($err !== '') { flash('Kaydedilmedi, PayTR bilgileri kabul etmedi: ' . $err, 'err'); redirect('./?s=ayarlar#kart'); }
+    if (@file_put_contents(PAYTR_FILE, "<?php\n// PayTR mağaza bilgileri (panelden oluşturuldu). Silerseniz kartla ödeme kapanır.\nreturn " . var_export($cfg, true) . ";\n", LOCK_EX) === false) throw new RuntimeException('data/paytr.php yazılamadı. data klasörünün yazma iznini kontrol edin.');
+    @chmod(PAYTR_FILE, 0600);
+    flash('PayTR bilgileri doğrulandı ve kaydedildi. Kartla ödeme ' . ($cfg['test'] ? 'test modunda' : 'canlı olarak') . ' açık.');
     redirect('./?s=ayarlar#kart');
 
   case 'deneme-epostasi':

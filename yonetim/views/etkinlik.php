@@ -135,7 +135,7 @@ $faqRow = function (string $i, array $q): string {
     <div class="checks">
       <?php foreach (array_intersect_key(PAY_METHODS, array_flip(PAY_METHODS_ACTIVE)) as $k => $l): ?><label class="check"><input type="checkbox" name="pay_methods[]" value="<?= $k ?>"<?= in_array($k, $ev['pay_methods'] ?? [], true) ? ' checked' : '' ?>> <?= e($l) ?></label><?php endforeach; ?>
     </div>
-    <label>Online ödeme bağlantısı <span class="opt">(iyzico, Shopier, PayTR linki vb.)</span><input type="url" name="pay_link" value="<?= e($ev['pay_link'] ?? '') ?>" placeholder="https://"></label>
+    <label>Online ödeme bağlantısı <span class="opt">(Shopier, PayTR linki vb.)</span><input type="url" name="pay_link" value="<?= e($ev['pay_link'] ?? '') ?>" placeholder="https://"></label>
     <?php if (trim((string) setting('bank_iban', '')) === ''): ?><p class="notice">Havale seçeneği için <a href="./?s=ayarlar#odeme">Ayarlar</a> bölümünden banka ve IBAN bilgisini girin.</p><?php endif; ?>
   </section>
 

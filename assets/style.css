@@ -384,6 +384,7 @@ button { cursor: pointer; }
 .footer__pay { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; padding-block: 18px; border-top: 1px solid var(--line-2); }
 .footer__pay img { height: 24px; width: auto; }
 .pay__card { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.pay-page iframe.pay-frame { display: block; width: 100%; min-height: 620px; border: 0; margin-top: 18px; background: #fff; }
 .footer__bottom a:hover { color: var(--accent); }
 @media (max-width: 900px) { .footer__grid { grid-template-columns: 1fr 1fr; } .footer__brand { grid-column: 1 / -1; } }
 @media (max-width: 480px) { .footer__grid { grid-template-columns: 1fr; } }
