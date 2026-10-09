@@ -9,7 +9,7 @@ ini_set('display_errors', '0');
 ini_set('error_log', __DIR__ . '/../data/hata.log');
 // Yakalanmamış hata: boş sayfa yerine kısa bir açıklama gösterilir, ayrıntı hata kaydına yazılır.
 set_exception_handler(function (Throwable $ex) {
-  error_log(get_class($ex) . ': ' . $ex->getMessage() . ' @ ' . basename($ex->getFile()) . ':' . $ex->getLine() . ' ' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' ' . ($_SERVER['REQUEST_URI'] ?? ''));
+  error_log(get_class($ex) . ': ' . $ex->getMessage() . ' @ ' . basename($ex->getFile()) . ':' . $ex->getLine() . ' ' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' ' . preg_replace('/([?&](k|t|token)=)[^&]+/', '$1***', (string) ($_SERVER['REQUEST_URI'] ?? '')));
   if (!headers_sent()) { http_response_code(500); header('Content-Type: text/html; charset=utf-8'); }
   $msg = $ex instanceof RuntimeException ? $ex->getMessage() : 'Beklenmeyen bir sorun oluştu.';
   echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bir sorun oluştu</title>'
@@ -22,6 +22,7 @@ const DATA = ROOT . '/data';
 const CONTENT_FILE = DATA . '/content.json';
 const SECRET_FILE = DATA . '/secret.php';
 const RATE_FILE = DATA . '/rate.json';
+const SITE_URL = 'https://www.iseatolye.com.tr';
 
 const TR_MONTHS = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const TR_MONTHS_SHORT = ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
@@ -70,7 +71,8 @@ function wa_href(string $num, string $text = ''): string {
 function site_url(string $path = ''): string {
   $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
   if (is_local()) return 'http://' . $host . $path;
-  $base = trim((string) setting('site_url', '')) ?: 'https://' . ($host ?: 'www.iseatolye.com.tr');
+  // Adres hiçbir zaman isteğin Host başlığından üretilmez (şifre yenileme bağlantıları başka alan adına yönlendirilemesin)
+  $base = trim((string) setting('site_url', '')) ?: SITE_URL;
   return rtrim($base, '/') . $path;
 }
 
@@ -79,7 +81,9 @@ function is_local(): bool {
 }
 
 function https(): bool {
-  return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+  if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return true;
+  // Canlıda site yalnızca HTTPS ile açılır (.htaccess yönlendirir); sunucu bunu bildirmese de çerezler güvenli işaretlenir
+  return !is_local() && PHP_SAPI !== 'cli';
 }
 
 // ---------- Veritabanı (MySQL) ----------

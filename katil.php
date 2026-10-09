@@ -183,7 +183,7 @@ include __DIR__ . '/inc/header.php';
           <legend><span class="fs__n">5</span>Ödeme</legend>
           <div class="opts">
             <?php foreach ($methods as $m): ?>
-              <label class="opt opt--row"><input type="radio" name="method" value="<?= $m ?>"<?= $old['method'] === $m ? ' checked' : '' ?> required><span class="opt__body"><strong><?= e(PAY_METHODS[$m]) ?></strong><span><?= e(['havale' => 'Kaydınızdan sonra hesap bilgileri gösterilir. Ödemeniz onaylanınca kaydınız kesinleşir.', 'yerinde' => 'Ücreti etkinlik günü nakit ya da kartla ödersiniz.', 'link' => 'Kaydınızdan sonra güvenli ödeme sayfasına yönlendirilirsiniz.', 'kart' => 'PayTR güvenli ödeme sayfasında kartınızla ödersiniz. Ödeme alınınca kaydınız hemen kesinleşir.'][$m]) ?></span></span></label>
+              <label class="opt opt--row"><input type="radio" name="method" value="<?= $m ?>"<?= $old['method'] === $m ? ' checked' : '' ?> required><span class="opt__body"><strong><?= e(PAY_METHODS[$m]) ?></strong><span><?= e(['havale' => 'Kaydınızdan sonra hesap bilgileri gösterilir. Ödemeniz onaylanınca kaydınız kesinleşir.', 'yerinde' => 'Ücreti etkinlik günü nakit ya da kartla ödersiniz.', 'link' => 'Kaydınızdan sonra güvenli ödeme sayfasına yönlendirilirsiniz.', 'kart' => 'PayTR güvenli ödeme sayfasında kartınızla ödersiniz. Ödeme alınınca kaydınız hemen kesinleşir. Yeriniz ' . CARD_HOLD_MINUTES . ' dakika ayrılır.'][$m]) ?></span></span></label>
             <?php endforeach; ?>
           </div>
         </fieldset>

@@ -34,6 +34,7 @@ const PAY_METHODS = [
 // Sitede seçilebilen yöntemler. "Etkinlikte ödeme" kaldırıldı; eski kayıtlarda adı görünsün diye PAY_METHODS'ta duruyor.
 // Kartla ödeme (PayTR) etkinlik bazında seçilmez: mağaza bilgileri girilince tüm ücretli etkinliklerde görünür.
 const PAY_METHODS_ACTIVE = ['havale', 'link'];
+const CARD_HOLD_MINUTES = 45;
 const LEVELS = ['' => 'Belirtilmemiş', 'herkes' => 'Herkes için', 'baslangic' => 'Başlangıç', 'orta' => 'Orta seviye', 'ileri' => 'İleri seviye'];
 
 function catalog(): array {
@@ -215,6 +216,8 @@ function capacity_of(array $ev, string $sid): int {
 function holds_seat(array $r): bool {
   if (!in_array($r['status'], SEAT_STATUSES, true)) return false;
   if ($r['status'] === 'onayli' || !empty($r['paid']) || !in_array($r['method'] ?? '', ['havale', 'link', 'kart'], true)) return true;
+  // Kartla ödemede yer kısa süre tutulur: ödeme yapılmayan kayıtlar kontenjanı uzun süre kilitlemesin
+  if (($r['method'] ?? '') === 'kart') return (strtotime((string) ($r['created'] ?? '')) ?: time()) > time() - CARD_HOLD_MINUTES * 60;
   $h = (int) setting('hold_hours', 48);
   return $h <= 0 || (strtotime((string) ($r['created'] ?? '')) ?: time()) > time() - $h * 3600;
 }

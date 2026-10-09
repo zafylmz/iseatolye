@@ -43,7 +43,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       header('Location: /hesabim/?s=profil', true, 303); exit;
     }
     if ($a === 'sifre') {
-      if (!password_verify((string) ($_POST['old'] ?? ''), $me['hash'])) throw new RuntimeException('Mevcut şifreniz hatalı.');
+      if (!rate_hit('sifre:' . $me['id'], 10) || !password_verify((string) ($_POST['old'] ?? ''), $me['hash'])) throw new RuntimeException('Mevcut şifreniz hatalı.');
       $p1 = (string) ($_POST['p1'] ?? '');
       if (mb_strlen($p1) < 8) throw new RuntimeException('Yeni şifre en az 8 karakter olmalı.');
       if ($p1 !== (string) ($_POST['p2'] ?? '')) throw new RuntimeException('Yeni şifreler aynı değil.');
@@ -58,7 +58,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
     if ($a === 'eposta') {
       $email = mb_strtolower(trim((string) ($_POST['email'] ?? '')));
-      if (!password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
+      if (!rate_hit('sifre:' . $me['id'], 10) || !password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
       if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Geçerli bir e-posta adresi yazın.');
       if (($o = user_by('email', $email)) && $o['id'] !== $me['id']) throw new RuntimeException('Bu e-posta başka bir üyelikte kullanılıyor.');
       $update(function (array &$u) use ($email) { $u['email'] = $email; });
@@ -66,7 +66,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       header('Location: /hesabim/?s=guvenlik', true, 303); exit;
     }
     if ($a === 'sil') {
-      if (!password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
+      if (!rate_hit('sifre:' . $me['id'], 10) || !password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
       // Üye silinir; yorumları "Eski üye" olarak kalır, kayıtlardaki bağlantı kaldırılır, düşündükleri silinir.
       delete_upload($me['avatar'] ?? '');
       json_update(USERS_FILE, function (array &$d) use ($me) { $d['users'] = array_values(array_filter($d['users'], fn($u) => $u['id'] !== $me['id'])); }, ['users' => []]);

@@ -94,7 +94,7 @@ switch ($action) {
       $ev['capacity'] = post_int('capacity');
       $ev['tickets'] = $tickets;
       $ev['pay_methods'] = array_values(array_intersect((array) ($_POST['pay_methods'] ?? []), PAY_METHODS_ACTIVE));
-      $ev['pay_link'] = filter_var(post('pay_link'), FILTER_VALIDATE_URL) ? post('pay_link') : '';
+      $ev['pay_link'] = web_url(post('pay_link')) ? post('pay_link') : '';
       foreach (['reg_open', 'waitlist', 'approval', 'show_left', 'show_attendees', 'comments', 'featured', 'pinned'] as $k) $ev[$k] = !empty($_POST[$k]);
       $ev['reg_close_hours'] = post_int('reg_close_hours', 0, 24 * 30);
       $ev['max_per_order'] = post_int('max_per_order', 1, 50);
@@ -165,7 +165,7 @@ switch ($action) {
       $v['name'] = $name;
       $v['type'] = in_array(post('type'), ['mekan', 'acik', 'online'], true) ? post('type') : 'mekan';
       foreach (['address' => 200, 'district' => 60, 'city' => 60, 'phone' => 30, 'note' => 600] as $k => $max) $v[$k] = mb_substr(post($k), 0, $max);
-      $v['map_url'] = filter_var(post('map_url'), FILTER_VALIDATE_URL) ? post('map_url') : '';
+      $v['map_url'] = web_url(post('map_url')) ? post('map_url') : '';
       $v['capacity'] = post_int('capacity');
       $v['photo'] = image_pick('photo', (string) ($v['photo'] ?? ''));
       $want = slugify(post('slug') ?: $name, 'mekan'); $new = $want; $n = 2;
@@ -194,7 +194,7 @@ switch ($action) {
       $x['name'] = $name;
       $x['title'] = mb_substr(post('title'), 0, 80);
       $x['bio'] = mb_substr(post('bio'), 0, 1200);
-      $x['instagram'] = filter_var(post('instagram'), FILTER_VALIDATE_URL) ? post('instagram') : '';
+      $x['instagram'] = web_url(post('instagram')) ? post('instagram') : '';
       $x['photo'] = image_pick('photo', (string) ($x['photo'] ?? ''));
       if ($i === false) $d['instructors'][] = $x; else $d['instructors'][$i] = $x;
     });
@@ -549,7 +549,7 @@ switch ($action) {
     if ($c['brand']['logo_text'] === '') $c['brand']['logo_text'] = $c['brand']['name'];
     $c['brand']['logo'] = image_pick('logo', (string) ($c['brand']['logo'] ?? ''));
     $c['brand']['og_image'] = image_pick('og_image', (string) ($c['brand']['og_image'] ?? ''));
-    $c['announcement'] = ['on' => !empty($_POST['ann_on']), 'text' => post('ann_text'), 'url' => post('ann_url')];
+    $c['announcement'] = ['on' => !empty($_POST['ann_on']), 'text' => post('ann_text'), 'url' => (web_url(post('ann_url')) || str_starts_with(post('ann_url'), '/')) && !str_starts_with(post('ann_url'), '//') ? post('ann_url') : ''];
     save_content($c);
     flash('Marka ve duyuru kaydedildi.');
     redirect('./?s=sayfalar&t=marka');
@@ -561,7 +561,7 @@ switch ($action) {
     $c['socials'] = [];
     foreach (array_values((array) ($_POST['socials'] ?? [])) as $s) {
       $url = trim((string) ($s['url'] ?? '')); $label = trim((string) ($s['label'] ?? ''));
-      if ($label !== '' && filter_var($url, FILTER_VALIDATE_URL)) $c['socials'][] = ['label' => $label, 'url' => $url];
+      if ($label !== '' && web_url($url)) $c['socials'][] = ['label' => $label, 'url' => $url];
     }
     $st = &$c['settings'];
     foreach (['site_url', 'mail_from', 'notify_email', 'bank_name', 'bank_holder', 'bank_iban', 'payment_note', 'cancel_policy', 'terms', 'reg_success_note', 'seller_title', 'seller_tax', 'seller_address', 'seller_mersis', 'seller_kep'] as $k) $st[$k] = post($k);
@@ -810,7 +810,7 @@ switch ($action) {
   case 'sifre':
     if (!password_verify((string) ($_POST['old'] ?? ''), password_hash_stored())) throw new RuntimeException('Mevcut şifre hatalı.');
     $p1 = (string) ($_POST['p1'] ?? '');
-    if (mb_strlen($p1) < 8) throw new RuntimeException('Yeni şifre en az 8 karakter olmalı.');
+    if (mb_strlen($p1) < 12) throw new RuntimeException('Panel şifresi en az 12 karakter olmalı.');
     if ($p1 !== (string) ($_POST['p2'] ?? '')) throw new RuntimeException('Yeni şifreler aynı değil.');
     save_password($p1);
     session_regenerate_id(true);

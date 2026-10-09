@@ -38,6 +38,7 @@ include __DIR__ . '/inc/header.php';
     <?php $pm = (string) ($_GET['odeme'] ?? ''); if ($pm === 'ok' && $r['paid']): ?><p class="notice notice--ok" role="status"><?= icon('onay') ?>Ödemeniz alındı, kaydınız kesinleşti. Teşekkür ederiz!</p>
     <?php elseif ($pm === 'ok'): ?><p class="notice notice--ok" role="status"><?= icon('bilgi') ?>Ödemeniz işleniyor. Onay birkaç saniye içinde gelir; sayfayı yenileyerek kontrol edebilirsiniz. Onaylanınca size e-posta da göndereceğiz.</p>
     <?php elseif ($pm === 'hata' && !$r['paid']): ?><p class="notice notice--err" role="alert"><?= icon('bilgi') ?>Ödeme tamamlanamadı, kartınızdan ücret alınmadı. Aşağıdan tekrar deneyebilir ya da başka bir yöntem seçebilirsiniz.</p>
+    <?php elseif ($pm === 'dolu' && !$r['paid']): ?><p class="notice notice--err" role="alert"><?= icon('bilgi') ?>Ödeme süresi dolduğu için yeriniz başka katılımcılara açıldı ve bu tarihte yer kalmadı. Kartınızdan ücret alınmadı.</p>
     <?php elseif ($pm === 'kapali' && !$r['paid']): ?><p class="notice notice--warn" role="alert"><?= icon('bilgi') ?>Kartla ödeme şu an kullanılamıyor. Lütfen biraz sonra tekrar deneyin ya da havale ile ödeyin.</p><?php endif; ?>
     <?php if ($flash): ?><p class="notice notice--<?= e($flash[1]) ?>"><?= e($flash[0]) ?></p><?php endif; ?>
 

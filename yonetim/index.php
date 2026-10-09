@@ -26,7 +26,7 @@ if (!has_password()) {
     if (!rate_hit('kurulum:' . client_hash(), 10)) { flash('Çok fazla deneme yapıldı. Bir saat sonra tekrar deneyin.', 'err'); redirect('./'); }
     if (!hash_equals($key, strtoupper(trim((string) ($_POST['key'] ?? ''))))) { sleep(1); flash('Kurulum anahtarı hatalı. data/kurulum-anahtari.txt dosyasındaki 8 karakteri yazın.', 'err'); redirect('./'); }
     $p1 = (string) ($_POST['p1'] ?? ''); $p2 = (string) ($_POST['p2'] ?? '');
-    if (mb_strlen($p1) < 8) { flash('Şifre en az 8 karakter olmalı.', 'err'); redirect('./'); }
+    if (mb_strlen($p1) < 12) { flash('Panel şifresi en az 12 karakter olmalı.', 'err'); redirect('./'); }
     if ($p1 !== $p2) { flash('Şifreler aynı değil.', 'err'); redirect('./'); }
     try { save_password($p1); } catch (RuntimeException $ex) { flash($ex->getMessage(), 'err'); redirect('./'); }
     @unlink(SETUP_KEY_FILE);

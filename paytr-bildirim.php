@@ -18,26 +18,33 @@ if (($p['status'] ?? '') !== 'success') {
   error_log('PayTR ödeme başarısız (' . $r['code'] . '): ' . ($p['failed_reason_code'] ?? '') . ' ' . ($p['failed_reason_msg'] ?? ''));
   echo 'OK'; exit;
 }
-if ((int) ($p['total_amount'] ?? 0) < paytr_kurus((float) $r['total'])) {
-  error_log('PayTR bildirimi: tutar eksik (' . $r['code'] . '): ' . ($p['total_amount'] ?? '') . ' kuruş');
-  echo 'OK'; exit;
-}
 $test = !empty($p['test_mode']);
+// Canlı moddayken gelen test ödemesi reddedilir (herkese açık test kartlarıyla bilet alınamasın)
+if ($test && empty($cfg['test'])) { error_log('PayTR: canlı modda test bildirimi reddedildi (' . $oid . ')'); echo 'OK'; exit; }
+$alert = function (string $why) use ($r, $p, $oid) {
+  error_log('PayTR bildirimi (' . $r['code'] . '): ' . $why);
+  if (($to = admin_email()) !== '') send_mail($to, 'İADE GEREKEBİLİR: ' . $r['code'], $why . "\nPayTR sipariş no: " . $oid . "\nTahsil edilen: " . money(((int) ($p['total_amount'] ?? 0)) / 100) . "\nKayıt tutarı: " . money($r['total']) . "\n\nPanel: " . site_url('/yonetim/?s=kayit&id=' . rawurlencode($r['id'])));
+};
+require_once __DIR__ . '/inc/mail.php';
+if ((int) ($p['total_amount'] ?? 0) < paytr_kurus((float) $r['total'])) { $alert('Ödenen tutar kayıt tutarından az; kayıt "ödendi" yapılmadı.'); echo 'OK'; exit; }
+if (!empty($r['paid']) && ($r['pay_ref'] ?? '') !== $oid && !str_starts_with((string) ($r['pay_ref'] ?? ''), $oid)) { $alert('Bu kayıt zaten ödenmişti, ikinci bir kart ödemesi alındı.'); echo 'OK'; exit; }
 $upd = json_update(REGS_FILE, function (array &$d) use ($r, $oid, $test) {
   foreach ($d['regs'] as &$x) {
     if ($x['id'] !== $r['id']) continue;
     if (!empty($x['paid'])) return null;
-    $x['paid'] = true;
     $x['method'] = 'kart';
-    $x['pay_ref'] = $oid . ($test ? ' (deneme)' : '');
+    $x['pay_ref'] = $oid . ($test ? ' (TEST, gerçek ödeme değil)' : '');
+    // Test ödemesi kaydı "ödendi" yapmaz; yalnızca akışın çalıştığı görülür
+    if ($test) { $x['test_paid'] = true; $x['updated'] = date('Y-m-d H:i'); return null; }
+    $x['paid'] = true;
     if ($x['status'] === 'beklemede') $x['status'] = 'onayli';
     $x['updated'] = date('Y-m-d H:i');
     return $x;
   }
   return null;
 }, ['regs' => []]);
+if ($test && ($to = admin_email()) !== '') send_mail($to, 'PayTR test ödemesi başarılı: ' . $r['code'], "Test modunda ödeme akışı çalıştı. Kayıt \"ödendi\" yapılmadı.\nPayTR sipariş no: " . $oid);
 if ($upd && ($ev = event_by_id($upd['event']))) {
-  require_once __DIR__ . '/inc/mail.php';
   try {
     mail_reg_update($upd, $ev, 'odeme');
     if (($to = admin_email()) !== '') send_mail($to, 'Kartla ödeme alındı: ' . $ev['title'] . ' (' . $upd['code'] . ')', $upd['name'] . ' · ' . $upd['email'] . "\nTutar: " . money($upd['total']) . "\nPayTR sipariş no: " . $upd['pay_ref'] . ($upd['status'] === 'iptal' ? "\n\nDikkat: bu kayıt iptal edilmiş durumda, ücret iadesi gerekebilir." : '') . "\n\nPanel: " . site_url('/yonetim/?s=kayit&id=' . rawurlencode($upd['id'])));

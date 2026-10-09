@@ -36,7 +36,9 @@ RewriteRule ^blog/([a-z0-9-]+)/?$ blog-yazi.php?slug=$1 [L,QSA]
 # İç klasörlere doğrudan erişimi kapat
 RewriteRule ^(data|inc)(/|$) - [F,L]
 RewriteRule ^yonetim/(views/|lib\.php|actions\.php) - [F,L]
-RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
+RewriteRule ^(KURULUM\.txt|README\.md|error_log|.*\.(log|bak|sql|zip|md|lock|tmp))$ - [F,L,NC]
+# Gizli dosya ve klasörler (.git, .env, .gitignore vb.) açılmaz
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
 
 # Güvenlik başlıkları: site başka bir sitenin içinde çerçeveye alınamaz, tarayıcı dosya türünü tahmin etmez,
 # bağlantı her zaman HTTPS ile kurulur
@@ -45,7 +47,12 @@ RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+  Header always set Strict-Transport-Security "max-age=31536000"
+  # İçerik güvenlik politikası: sayfalar yalnızca bu sitenin dosyalarını çalıştırır; tek dış kaynak kartla ödeme için PayTR
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paytr.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-src https://www.paytr.com; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
+  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+  Header always unset X-Powered-By
+  Header unset X-Powered-By
 </IfModule>
 
 <IfModule mod_deflate.c>

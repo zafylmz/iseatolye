@@ -53,7 +53,13 @@ function setup_key(): string {
   return $k;
 }
 
-function logged_in(): bool { return !empty($_SESSION['ok']) && has_password() && hash_equals(auth_version(), (string) ($_SESSION['pv'] ?? '')); }
+// Panel 2 saat işlem yapılmazsa kendiliğinden kapanır
+function logged_in(): bool {
+  if (empty($_SESSION['ok']) || !has_password() || !hash_equals(auth_version(), (string) ($_SESSION['pv'] ?? ''))) return false;
+  if (time() - (int) ($_SESSION['seen'] ?? time()) > 7200) { $_SESSION = []; return false; }
+  $_SESSION['seen'] = time();
+  return true;
+}
 
 function csrf(): string {
   if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
@@ -122,6 +128,9 @@ function catalog_update(callable $fn) {
 function regs_update(callable $fn) {
   return json_update(REGS_FILE, function (array &$d) use ($fn) { $d['regs'] ??= []; return $fn($d); }, ['regs' => []]);
 }
+
+// Yalnızca http(s) bağlantıları kabul edilir (javascript: gibi adresler kaydedilmez)
+function web_url(string $u): bool { return (bool) filter_var($u, FILTER_VALIDATE_URL) && (bool) preg_match('#^https?://#i', $u); }
 
 function post(string $key, string $default = ''): string {
   return trim(str_replace("\r\n", "\n", (string) ($_POST[$key] ?? $default)));
