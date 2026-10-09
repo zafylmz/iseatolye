@@ -66,7 +66,7 @@ $cta = function () use ($ev, $state, $myReg, $joinUrl, $me, $bookable) {
 };
 ?>
   <article class="event">
-    <header class="wrap event__head">
+    <header class="wrap event__head"><meta charset="utf-8">
       <a class="back" href="/etkinlikler/"><?= icon('sol') ?>Tüm etkinlikler</a>
       <?php if ($cat): ?><p class="label"><a href="/etkinlikler/?kategori=<?= e($cat['id']) ?>"><?= e($cat['name']) ?></a></p><?php endif; ?>
       <h1 class="display display--md"><?= e($ev['title']) ?></h1>

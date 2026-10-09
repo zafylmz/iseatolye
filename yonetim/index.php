@@ -114,8 +114,8 @@ $activeTab = ['etkinlik' => 'etkinlikler', 'kayit' => 'katilimlar', 'uye' => 'uy
 $titles = ['pano' => 'Pano', 'etkinlikler' => 'Etkinlikler', 'etkinlik' => 'Etkinlik', 'katilimlar' => 'Katılımlar', 'kayit' => 'Kayıt', 'mekanlar' => 'Mekan ve eğitmenler', 'uyeler' => 'Üyeler', 'uye' => 'Üye', 'yorumlar' => 'Yorumlar', 'mesajlar' => 'Mesajlar', 'blog' => 'Blog', 'yazi' => 'Yazı', 'galeri' => 'Galeri', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre', 'faturalar' => 'Faturalar', 'setup' => 'Kurulum', 'login' => 'Giriş'];
 ?><!doctype html>
 <html lang="tr">
-<head>
-  <meta charset="utf-8">
+<head><meta charset="utf-8">
+  
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <meta name="csrf" content="<?= e($tok) ?>">

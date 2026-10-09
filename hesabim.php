@@ -101,7 +101,7 @@ include __DIR__ . '/inc/header.php';
 $tabs = ['etkinlikler' => 'Etkinliklerim', 'dusunduklerim' => 'Düşündüklerim', 'profil' => 'Profil', 'guvenlik' => 'Hesap ve güvenlik'];
 ?>
   <section class="wrap account">
-    <header class="account__head">
+    <header class="account__head"><meta charset="utf-8">
       <?= avatar($me, 'lg') ?>
       <div><p class="label">Hesabım</p><h1 class="h2"><?= e($me['name']) ?></h1><a class="link-more" href="<?= e(user_url($me)) ?>">Herkese açık profilim<?= icon('sag') ?></a></div>
     </header>

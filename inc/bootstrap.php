@@ -12,7 +12,7 @@ set_exception_handler(function (Throwable $ex) {
   error_log(get_class($ex) . ': ' . $ex->getMessage() . ' @ ' . basename($ex->getFile()) . ':' . $ex->getLine() . ' ' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' ' . preg_replace('/([?&](k|t|token)=)[^&]+/', '$1***', (string) ($_SERVER['REQUEST_URI'] ?? '')));
   if (!headers_sent()) { http_response_code(500); header('Content-Type: text/html; charset=utf-8'); }
   $msg = $ex instanceof RuntimeException ? $ex->getMessage() : 'Beklenmeyen bir sorun oluştu.';
-  echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bir sorun oluştu</title>'
+  echo '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bir sorun oluştu</title>'
     . '<div style="font:16px/1.6 system-ui,sans-serif;max-width:520px;margin:12vh auto;padding:0 20px;color:#33271e"><h1 style="font-size:22px">Bir sorun oluştu</h1><p>'
     . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p><p><a href="javascript:history.back()" style="color:#8b5e3c">Geri dönüp tekrar deneyin</a></p></div>';
 });

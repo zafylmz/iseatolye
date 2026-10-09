@@ -37,8 +37,8 @@ $isOn = fn($href) => $href === '/etkinlikler/' ? (str_starts_with($path, '/etkin
 $moreOn = (bool) array_filter(array_keys($navMore), $isOn);
 ?><!doctype html>
 <html lang="tr">
-<head>
-  <meta charset="utf-8">
+<head><meta charset="utf-8">
+  
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($title) ?></title>
   <meta name="description" content="<?= e($description) ?>">
