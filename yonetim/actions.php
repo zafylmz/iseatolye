@@ -970,9 +970,9 @@ switch ($action) {
     if ($p1 !== (string) ($_POST['p2'] ?? '')) throw new RuntimeException('Yeni şifreler aynı değil.');
     save_password($p1);
     session_regenerate_id(true);
+    panel_device_set((string) $_SESSION['pv']);
     flash('Şifreniz değiştirildi. Diğer cihazlardaki açık oturumlar kapatıldı.');
     redirect('./?s=sifre');
 }
 
-    panel_device_set((string) $_SESSION['pv']);
 throw new RuntimeException('Bilinmeyen işlem.');
