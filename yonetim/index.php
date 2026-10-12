@@ -5,9 +5,20 @@ require __DIR__ . '/lib.php';
 require_once ROOT . '/inc/blog.php';
 require_once ROOT . '/inc/stats.php';
 require_once ROOT . '/inc/geo.php';
+require_once ROOT . '/inc/shop.php';
 
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
+
+// Panele daha önce giriş yapılmış tarayıcı (1 yıl). Şifre değişince geçersiz olur.
+// Çok sayıda farklı adresten şifre denenirse yeni cihazlardan giriş kapanır, bu tarayıcılardan girilebilir.
+const PANEL_DEVICE_COOKIE = 'ise_panel_cihaz';
+const PANEL_GLOBAL_LIMIT = 30; // tanınmayan cihazlardan saatte toplam deneme
+function panel_device_mark(string $v): string { return hash_hmac('sha256', 'panel-cihaz|' . $v, secret()); }
+function panel_known_device(): bool { return hash_equals(panel_device_mark(auth_version()), (string) ($_COOKIE[PANEL_DEVICE_COOKIE] ?? '')); }
+function panel_device_set(string $v): void {
+  setcookie(PANEL_DEVICE_COOKIE, panel_device_mark($v), ['expires' => time() + 31536000, 'path' => '/yonetim', 'samesite' => 'Strict', 'httponly' => true, 'secure' => https()]);
+}
 
 // Panel sahibinin tarayıcısını sayaçta saymamak için çerez (site geneli, 1 yıl).
 function skip_cookie(bool $on): void {
@@ -26,12 +37,13 @@ if (!has_password()) {
     if (!rate_hit('kurulum:' . client_hash(), 10)) { flash('Çok fazla deneme yapıldı. Bir saat sonra tekrar deneyin.', 'err'); redirect('./'); }
     if (!hash_equals($key, strtoupper(trim((string) ($_POST['key'] ?? ''))))) { sleep(1); flash('Kurulum anahtarı hatalı. data/kurulum-anahtari.txt dosyasındaki 8 karakteri yazın.', 'err'); redirect('./'); }
     $p1 = (string) ($_POST['p1'] ?? ''); $p2 = (string) ($_POST['p2'] ?? '');
-    if (mb_strlen($p1) < 8) { flash('Şifre en az 8 karakter olmalı.', 'err'); redirect('./'); }
+    if (mb_strlen($p1) < 12) { flash('Panel şifresi en az 12 karakter olmalı.', 'err'); redirect('./'); }
     if ($p1 !== $p2) { flash('Şifreler aynı değil.', 'err'); redirect('./'); }
     try { save_password($p1); } catch (RuntimeException $ex) { flash($ex->getMessage(), 'err'); redirect('./'); }
     @unlink(SETUP_KEY_FILE);
     session_regenerate_id(true);
     $_SESSION['ok'] = true;
+    panel_device_set((string) $_SESSION['pv']);
     skip_cookie(true);
     flash('Şifreniz oluşturuldu. Panele hoş geldiniz.');
     redirect('./');
@@ -44,12 +56,15 @@ if (!has_password()) {
     // Bir saatte 10 hatalı denemeden sonra giriş geçici olarak kapanır. Deneme hakkı şifre kontrolünden önce ayrılır,
     // böylece aynı anda gönderilen istekler sınırı aşamaz.
     if (!rate_hit('panel:' . client_hash(), 10)) { flash('Çok fazla hatalı deneme yapıldı. Bir saat sonra tekrar deneyin.', 'err'); redirect('./'); }
+    // Farklı adreslerden yapılan denemeler de toplamda sınırlanır; daha önce giriş yapılmış tarayıcı bu sınırdan etkilenmez
+    if (!panel_known_device() && !rate_hit('panel-tum', PANEL_GLOBAL_LIMIT)) { flash('Panele kısa sürede çok sayıda hatalı giriş denendiği için yeni cihazlardan giriş bir saatliğine kapatıldı. Daha önce panele girdiğiniz tarayıcıdan girebilirsiniz.', 'err'); redirect('./'); }
     if (password_verify((string) ($_POST['password'] ?? ''), password_hash_stored())) {
       // Başarılı girişte bu adresin deneme kaydı silinir
       json_update(RATE_FILE, function (array &$r) { unset($r['panel:' . client_hash()]); });
       session_regenerate_id(true);
       $_SESSION['ok'] = true;
       $_SESSION['pv'] = auth_version();
+      panel_device_set(auth_version());
       if (!isset($_COOKIE[STATS_SKIP_COOKIE])) skip_cookie(true);
       redirect('./' . (preg_match('/^[a-z-]+$/', (string) ($_POST['s'] ?? '')) ? '?s=' . $_POST['s'] : ''));
     }
@@ -71,7 +86,7 @@ if (logged_in() && $action !== '') {
     require __DIR__ . '/actions.php';
   } catch (RuntimeException $ex) {
     flash($ex->getMessage(), 'err');
-    $_SESSION['old_post'] = $action === 'etkinlik' ? $_POST : null;
+    $_SESSION['old_post'] = in_array($action, ['etkinlik', 'urun'], true) ? $_POST : null;
     redirect('./?' . http_build_query($_GET));
   }
 }
@@ -92,7 +107,7 @@ if (logged_in() && $view === 'galeri' && !empty($_GET['parca'])) {
 }
 
 $f = flash();
-$views = ['pano', 'etkinlikler', 'etkinlik', 'katilimlar', 'kayit', 'mekanlar', 'uyeler', 'uye', 'yorumlar', 'mesajlar', 'blog', 'yazi', 'galeri', 'sayfalar', 'ayarlar', 'istatistik', 'kontrol', 'sifre', 'faturalar'];
+$views = ['pano', 'etkinlikler', 'etkinlik', 'katilimlar', 'kayit', 'mekanlar', 'uyeler', 'uye', 'yorumlar', 'mesajlar', 'blog', 'yazi', 'galeri', 'sayfalar', 'ayarlar', 'istatistik', 'kontrol', 'sifre', 'faturalar', 'urunler', 'urun', 'siparisler', 'siparis', 'indirimler'];
 if (!in_array($view, [...$views, 'setup', 'login'], true)) $view = 'pano';
 
 // Rozetler: bekleyen işler
@@ -103,19 +118,23 @@ foreach (json_read(COMMENTS_FILE) as $list) foreach ($list as $cm) if (($cm['sta
 foreach (json_read(BLOG_COMMENTS_FILE) as $list) foreach ($list as $cm) if (($cm['status'] ?? '') !== 'approved') $pendingCm++;
 $unread = count(array_filter(json_read(MESSAGES_FILE, ['messages' => []])['messages'] ?? [], fn($m) => empty($m['read'])));
 $badge = fn(int $n) => $n ? ' <span class="badge">' . $n . '</span>' : '';
+// Mağaza: hazırlanacak (ödemesi alınmış ya da onaylanmış, henüz kargolanmamış) siparişler
+$orders = orders_all();
+$todoOrders = count(array_filter($orders, fn($o) => $o['status'] === 'hazirlaniyor'));
 
 $nav = [
   'Genel' => ['pano' => 'Pano'],
   'Etkinlik' => ['etkinlikler' => 'Etkinlikler', 'katilimlar' => 'Katılımlar' . $badge($pendingRegs), 'faturalar' => 'Faturalar' . $badge(count(array_filter($regs, 'invoice_due'))), 'mekanlar' => 'Mekan ve eğitmenler'],
+  'Mağaza' => ['urunler' => 'Ürünler', 'siparisler' => 'Siparişler' . $badge($todoOrders), 'indirimler' => 'İndirim kodları'],
   'Topluluk' => ['uyeler' => 'Üyeler', 'yorumlar' => 'Yorumlar' . $badge($pendingCm), 'mesajlar' => 'Mesajlar' . $badge($unread)],
   'Site' => ['galeri' => 'Galeri', 'blog' => 'Blog', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre'],
 ];
-$activeTab = ['etkinlik' => 'etkinlikler', 'kayit' => 'katilimlar', 'uye' => 'uyeler', 'yazi' => 'blog'][$view] ?? $view;
-$titles = ['pano' => 'Pano', 'etkinlikler' => 'Etkinlikler', 'etkinlik' => 'Etkinlik', 'katilimlar' => 'Katılımlar', 'kayit' => 'Kayıt', 'mekanlar' => 'Mekan ve eğitmenler', 'uyeler' => 'Üyeler', 'uye' => 'Üye', 'yorumlar' => 'Yorumlar', 'mesajlar' => 'Mesajlar', 'blog' => 'Blog', 'yazi' => 'Yazı', 'galeri' => 'Galeri', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre', 'faturalar' => 'Faturalar', 'setup' => 'Kurulum', 'login' => 'Giriş'];
+$activeTab = ['etkinlik' => 'etkinlikler', 'kayit' => 'katilimlar', 'uye' => 'uyeler', 'yazi' => 'blog', 'urun' => 'urunler', 'siparis' => 'siparisler'][$view] ?? $view;
+$titles = ['pano' => 'Pano', 'etkinlikler' => 'Etkinlikler', 'etkinlik' => 'Etkinlik', 'katilimlar' => 'Katılımlar', 'kayit' => 'Kayıt', 'mekanlar' => 'Mekan ve eğitmenler', 'uyeler' => 'Üyeler', 'uye' => 'Üye', 'yorumlar' => 'Yorumlar', 'mesajlar' => 'Mesajlar', 'blog' => 'Blog', 'yazi' => 'Yazı', 'galeri' => 'Galeri', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre', 'faturalar' => 'Faturalar', 'urunler' => 'Ürünler', 'urun' => 'Ürün', 'siparisler' => 'Siparişler', 'siparis' => 'Sipariş', 'indirimler' => 'İndirim kodları', 'setup' => 'Kurulum', 'login' => 'Giriş'];
 ?><!doctype html>
 <html lang="tr">
-<head>
-  <meta charset="utf-8">
+<head><meta charset="utf-8">
+  
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <meta name="csrf" content="<?= e($tok) ?>">

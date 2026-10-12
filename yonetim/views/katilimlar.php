@@ -119,14 +119,16 @@ Sorunuz olursa bu e-postayı yanıtlayabilir ya da WhatsApp'tan yazabilirsiniz.<
 <section class="card card--flush">
   <div class="card__head card__head--pad"><h2><?= count($rows) ?> kayıt</h2><?php if (!$ev): ?><a href="<?= e(panel_url(['s' => 'csv', 'durum' => $fst])) ?>">Tümünü indir (CSV)</a><?php endif; ?></div>
   <?php if (!$rows): ?><p class="hint pad">Bu filtreye uyan kayıt yok.</p><?php else: ?>
+  <form method="post" id="toplu-sil" class="toolbar pad" data-confirm="Seçilen kayıtlar kalıcı olarak silinecek (deneme kayıtları için). Gerçek bir kaydı iptal etmeniz genelde yeterlidir. Emin misiniz?"><?= hidden($tok, 'kayit-toplu-sil', ['back' => $self]) ?><button class="btn btn--danger btn--sm" data-regsel-btn disabled>Seçilenleri sil</button></form>
   <div class="tbl-wrap"><table class="tbl tbl--left tbl--regs">
-    <thead><tr><th>Kişi</th><?php if (!$ev): ?><th>Etkinlik</th><?php endif; ?><th>Tarih / bilet</th><th>Durum</th><th>Ödeme</th><th>İşlem</th></tr></thead>
+    <thead><tr><th><input type="checkbox" data-regsel-all aria-label="Tümünü seç"></th><th>Kişi</th><?php if (!$ev): ?><th>Etkinlik</th><?php endif; ?><th>Tarih / bilet</th><th>Durum</th><th>Ödeme</th><th>İşlem</th></tr></thead>
     <tbody>
       <?php foreach ($rows as $r): $rev = $ev ?? event_by_id($r['event']);
         $quick = function (string $do, string $label, string $cls = 'btn--ghost', bool $notify = false) use ($tok, $r, $self) {
           return '<form method="post">' . hidden($tok, 'kayit-hizli', ['id' => $r['id'], 'do' => $do, 'back' => $self] + ($notify ? ['notify' => '1'] : [])) . '<button class="btn btn--sm ' . $cls . '">' . e($label) . '</button></form>';
         }; ?>
         <tr class="<?= $r['status'] === 'iptal' ? 'is-off' : '' ?>">
+          <td><input type="checkbox" name="ids[]" value="<?= e($r['id']) ?>" form="toplu-sil" data-regsel aria-label="Seç: <?= e($r['code']) ?>"></td>
           <td><a href="./?s=kayit&amp;id=<?= e(urlencode($r['id'])) ?>"><strong><?= e($r['name']) ?></strong></a><?= $r['user'] ? ' <span class="tag">üye</span>' : '' ?><small><?= e($r['phone']) ?><?= $r['email'] !== '' ? ' · ' . e($r['email']) : '' ?></small><small class="mono-s"><?= e($r['code']) ?> · <?= e(time_ago($r['created'])) ?><?= ($r['source'] ?? '') === 'panel' ? ' · panelden' : '' ?></small><?php if (trim($r['note'] ?? '') !== ''): ?><small class="note">“<?= e($r['note']) ?>”</small><?php endif; ?></td>
           <?php if (!$ev): ?><td><a href="<?= e(panel_url(['s' => 'katilimlar', 'etkinlik' => $r['event']])) ?>"><?= e($rev['title'] ?? 'Silinmiş etkinlik') ?></a></td><?php endif; ?>
           <td><?= e(reg_session_label($r, $rev)) ?><small><?= e($r['ticket_name']) ?> × <?= (int) $r['qty'] ?><?= (int) $r['seats'] !== (int) $r['qty'] ? ' (' . (int) $r['seats'] . ' kişi)' : '' ?></small><?php if (trim($r['others'] ?? '') !== ''): ?><small>+ <?= e($r['others']) ?></small><?php endif; ?></td>

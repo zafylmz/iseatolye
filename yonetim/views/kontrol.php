@@ -15,7 +15,7 @@ if (db_config()) {
   try {
     $dbRows = db()->query('SELECT ad, LENGTH(veri) AS boyut, guncel FROM ise_belgeler ORDER BY ad')->fetchAll();
     $bk = db()->query('SELECT COUNT(*) FROM ise_yedekler')->fetchColumn();
-    $add('Veritabanı', true, 'Bağlı (' . db_config()['name'] . '). Üyeler, katılımlar ve yorumlar veritabanında; ' . (int) $bk . ' yedek kopya var.');
+    $add('Veritabanı', true, 'Bağlı (' . db_config()['name'] . '). Sitenin bütün verileri (içerik, etkinlikler, blog, üyeler, katılımlar, yorumlar) veritabanında; ' . (int) $bk . ' yedek kopya var.');
   } catch (Throwable $ex) { $dbErr = $ex->getMessage(); $add('Veritabanı', false, 'Bağlanılamıyor: ' . $dbErr); }
 } else {
   $add('Veritabanı', false, 'Bağlı değil; kayıtlar data/ klasöründeki dosyalarda. Aşağıdan bağlayabilirsiniz.', true);

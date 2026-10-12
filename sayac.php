@@ -28,7 +28,7 @@ $visitor = stats_visitor($day);
 
 if (($in['e'] ?? '') === 'hit') {
   $path = (string) ($in['p'] ?? '');
-  if (!preg_match('~^/[^\s?#]{0,199}$~u', $path) || str_starts_with($path, '/yonetim')) bitti();
+  if (!preg_match('~^/[^\s?#]{0,199}$~u', $path) || str_starts_with($path, '/yonetim') || str_starts_with($path, '//') || str_starts_with($path, '/\\')) bitti();
   $title = mb_substr(trim(preg_replace('/\s+/', ' ', (string) ($in['t'] ?? ''))), 0, 120);
   $ref = '';
   $r = (string) ($in['r'] ?? '');

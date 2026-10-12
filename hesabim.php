@@ -1,12 +1,14 @@
 <?php
-// Üye paneli: etkinliklerim, düşündüklerim, profil, şifre, hesabı sil.
+// Üye paneli: etkinliklerim, satın almalarım, düşündüklerim, profil, şifre, hesabı sil.
 require_once __DIR__ . '/inc/bootstrap.php';
 require_once __DIR__ . '/inc/events.php';
 require_once __DIR__ . '/inc/icons.php';
+require_once __DIR__ . '/inc/shop.php';
+require_once __DIR__ . '/inc/paytr.php';
 $c = content();
 $me = require_user();
 $view = (string) ($_GET['s'] ?? 'etkinlikler');
-if (!in_array($view, ['etkinlikler', 'dusunduklerim', 'profil', 'guvenlik'], true)) $view = 'etkinlikler';
+if (!in_array($view, ['etkinlikler', 'satin-almalar', 'dusunduklerim', 'profil', 'guvenlik'], true)) $view = 'etkinlikler';
 
 $update = function (callable $fn) use ($me) {
   json_update(USERS_FILE, function (array &$d) use ($fn, $me) { foreach ($d['users'] as &$u) if ($u['id'] === $me['id']) $fn($u); }, ['users' => []]);
@@ -43,7 +45,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       header('Location: /hesabim/?s=profil', true, 303); exit;
     }
     if ($a === 'sifre') {
-      if (!password_verify((string) ($_POST['old'] ?? ''), $me['hash'])) throw new RuntimeException('Mevcut şifreniz hatalı.');
+      if (!rate_hit('sifre:' . $me['id'], 10) || !password_verify((string) ($_POST['old'] ?? ''), $me['hash'])) throw new RuntimeException('Mevcut şifreniz hatalı.');
       $p1 = (string) ($_POST['p1'] ?? '');
       if (mb_strlen($p1) < 8) throw new RuntimeException('Yeni şifre en az 8 karakter olmalı.');
       if ($p1 !== (string) ($_POST['p2'] ?? '')) throw new RuntimeException('Yeni şifreler aynı değil.');
@@ -58,7 +60,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
     if ($a === 'eposta') {
       $email = mb_strtolower(trim((string) ($_POST['email'] ?? '')));
-      if (!password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
+      if (!rate_hit('sifre:' . $me['id'], 10) || !password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
       if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Geçerli bir e-posta adresi yazın.');
       if (($o = user_by('email', $email)) && $o['id'] !== $me['id']) throw new RuntimeException('Bu e-posta başka bir üyelikte kullanılıyor.');
       $update(function (array &$u) use ($email) { $u['email'] = $email; });
@@ -66,7 +68,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       header('Location: /hesabim/?s=guvenlik', true, 303); exit;
     }
     if ($a === 'sil') {
-      if (!password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
+      if (!rate_hit('sifre:' . $me['id'], 10) || !password_verify((string) ($_POST['password'] ?? ''), $me['hash'])) throw new RuntimeException('Şifreniz hatalı.');
       // Üye silinir; yorumları "Eski üye" olarak kalır, kayıtlardaki bağlantı kaldırılır, düşündükleri silinir.
       delete_upload($me['avatar'] ?? '');
       json_update(USERS_FILE, function (array &$d) use ($me) { $d['users'] = array_values(array_filter($d['users'], fn($u) => $u['id'] !== $me['id'])); }, ['users' => []]);
@@ -95,17 +97,39 @@ foreach ($regs as $r) {
 }
 usort($upcoming, fn($a, $b) => session_ts($a['s'] ?? []) <=> session_ts($b['s'] ?? []));
 $ints = array_values(array_filter(array_map(fn($eid) => event_by_id((string) $eid), array_keys(user_interests($me['id']))), fn($ev) => $ev && event_visible($ev)));
+// Satın almalarım: mağaza siparişleri ve ücretli etkinlik kayıtları birlikte, yeniden eskiye
+$buys = [];
+foreach (my_orders($me) as $o) {
+  $pr = product_by_id($o['product']);
+  $open = order_unpaid($o);
+  $buys[] = ['t' => $o['created'], 'kind' => 'Mağaza', 'title' => $o['product_name'] . ((int) $o['qty'] > 1 ? ' × ' . (int) $o['qty'] : ''), 'img' => $pr ? product_cover($pr) : '',
+    'code' => $o['code'], 'total' => (float) $o['total'], 'paid' => !empty($o['paid']), 'off' => $o['status'] === 'iptal',
+    'state' => $o['status'] === 'iptal' ? 'İptal edildi' : (!empty($o['paid']) || $o['status'] !== 'beklemede' ? (ORDER_STATUS[$o['status']] ?? '') : 'Ödeme bekleniyor'),
+    'pill' => $o['status'] === 'iptal' ? 'iptal' : ($open ? 'beklemede' : 'onayli'),
+    'url' => order_url($o), 'pay' => $open && paytr_on() && $o['method'] === 'kart' ? order_pay_url($o) : ($open ? order_url($o) : '')];
+}
+foreach ($regs as $r) {
+  if ((float) ($r['total'] ?? 0) <= 0 || !($ev = event_by_id($r['event']))) continue;
+  $open = empty($r['paid']) && in_array($r['status'], SEAT_STATUSES, true);
+  $buys[] = ['t' => $r['created'], 'kind' => 'Etkinlik', 'title' => $ev['title'], 'img' => $ev['cover'] ?? '',
+    'code' => $r['code'], 'total' => (float) $r['total'], 'paid' => !empty($r['paid']), 'off' => $r['status'] === 'iptal',
+    'state' => $r['status'] === 'iptal' ? 'İptal edildi' : (!empty($r['paid']) ? 'Ödendi' : ($open ? 'Ödeme bekleniyor' : (REG_STATUS[$r['status']] ?? ''))),
+    'pill' => $r['status'] === 'iptal' ? 'iptal' : ($open ? 'beklemede' : 'onayli'),
+    'url' => ticket_url($r), 'pay' => $open && paytr_on() && ($r['method'] ?? '') === 'kart' ? '/odeme.php?kod=' . rawurlencode($r['code']) . '&k=' . reg_key($r) : ($open ? ticket_url($r) : '')];
+}
+usort($buys, fn($a, $b) => strcmp($b['t'], $a['t']));
+$unpaidBuys = count(array_filter($buys, fn($b) => $b['pay'] !== ''));
 $title = 'Hesabım · ' . $c['brand']['name'];
 $noindex = true;
 include __DIR__ . '/inc/header.php';
-$tabs = ['etkinlikler' => 'Etkinliklerim', 'dusunduklerim' => 'Düşündüklerim', 'profil' => 'Profil', 'guvenlik' => 'Hesap ve güvenlik'];
+$tabs = ['etkinlikler' => 'Etkinliklerim', 'satin-almalar' => 'Satın almalarım', 'dusunduklerim' => 'Düşündüklerim', 'profil' => 'Profil', 'guvenlik' => 'Hesap ve güvenlik'];
 ?>
   <section class="wrap account">
-    <header class="account__head">
+    <header class="account__head"><meta charset="utf-8">
       <?= avatar($me, 'lg') ?>
       <div><p class="label">Hesabım</p><h1 class="h2"><?= e($me['name']) ?></h1><a class="link-more" href="<?= e(user_url($me)) ?>">Herkese açık profilim<?= icon('sag') ?></a></div>
     </header>
-    <nav class="tabs" aria-label="Hesap bölümleri"><?php foreach ($tabs as $k => $l): ?><a href="/hesabim/?s=<?= $k ?>"<?= $view === $k ? ' aria-current="page"' : '' ?>><?= $l ?><?php if ($k === 'etkinlikler' && $upcoming): ?><span class="count"><?= count($upcoming) ?></span><?php elseif ($k === 'dusunduklerim' && $ints): ?><span class="count"><?= count($ints) ?></span><?php endif; ?></a><?php endforeach; ?></nav>
+    <nav class="tabs" aria-label="Hesap bölümleri"><?php foreach ($tabs as $k => $l): ?><a href="/hesabim/?s=<?= $k ?>"<?= $view === $k ? ' aria-current="page"' : '' ?>><?= $l ?><?php if ($k === 'satin-almalar' && $unpaidBuys): ?><span class="count"><?= $unpaidBuys ?></span><?php endif; ?><?php if ($k === 'etkinlikler' && $upcoming): ?><span class="count"><?= count($upcoming) ?></span><?php elseif ($k === 'dusunduklerim' && $ints): ?><span class="count"><?= count($ints) ?></span><?php endif; ?></a><?php endforeach; ?></nav>
     <?php if ($flash): ?><p class="notice notice--<?= e($flash[1]) ?>"><?= e($flash[0]) ?></p><?php endif; ?>
 
     <?php if ($view === 'etkinlikler'): ?>
@@ -128,6 +152,19 @@ $tabs = ['etkinlikler' => 'Etkinliklerim', 'dusunduklerim' => 'Düşündüklerim
           <?php endforeach; ?>
         </ul>
       <?php endif; ?>
+
+    <?php elseif ($view === 'satin-almalar'): ?>
+      <p class="muted">Mağaza siparişleriniz ve ücretli etkinlik kayıtlarınız. Yarım kalan bir ödemeyi buradan tamamlayabilirsiniz.</p>
+      <?php if (!$buys): ?><div class="empty empty--left"><p>Henüz bir satın almanız yok.</p><a class="btn" href="/magaza/">Mağazaya göz atın</a></div><?php endif; ?>
+      <ul class="rlist">
+        <?php foreach ($buys as $b): ?>
+          <li class="rrow<?= $b['off'] ? ' is-off' : '' ?>">
+            <a class="rrow__img" href="<?= e($b['url']) ?>"><?php if ($b['img'] !== ''): ?><img src="<?= e($b['img']) ?>" alt="" loading="lazy"><?php endif; ?></a>
+            <div class="rrow__info"><a href="<?= e($b['url']) ?>"><strong><?= e($b['title']) ?></strong></a><span class="muted"><?= e($b['kind']) ?> · <?= e(tr_date(substr($b['t'], 0, 10))) ?> · <?= e($b['code']) ?></span><span class="small"><span class="pill pill--<?= e($b['pill']) ?>"><?= e($b['state']) ?></span> <?= money($b['total']) ?></span></div>
+            <?php if ($b['pay'] !== ''): ?><a class="btn btn--sm" href="<?= e($b['pay']) ?>">Ödemeyi tamamla</a><?php else: ?><a class="btn btn--ghost btn--sm" href="<?= e($b['url']) ?>">Gör</a><?php endif; ?>
+          </li>
+        <?php endforeach; ?>
+      </ul>
 
     <?php elseif ($view === 'dusunduklerim'): ?>
       <p class="muted">"Katılmayı düşünüyorum" dediğiniz etkinlikler. Kesinleştiğinde kaydınızı oluşturmayı unutmayın.</p>

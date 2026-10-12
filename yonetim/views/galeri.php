@@ -169,6 +169,14 @@ $albumForm = function (array $a) use ($tok) { ?>
 <?php };
 ?>
 <div class="bar"><h1>Galeri <span class="count"><?= count($all) ?></span></h1><div class="bar__act"><a class="btn btn--ghost btn--sm" href="/galeri/" target="_blank" rel="noopener">Sitede gör ↗</a></div></div>
+<?php $big = media_big(); if ($big): ?>
+<form method="post" class="notice" data-confirm="Büyük görseller aynı adla, küçültülmüş hâlleriyle değiştirilecek (en fazla 1920 piksel). Orijinaller saklanmaz. Devam edilsin mi?">
+  <?= hidden($tok, 'medya-optimize') ?>
+  <span><?= count($big) ?> görsel 400 KB'tan büyük (toplam <?= round(array_sum(array_column($big, 'size')) / 1048576, 1) ?> MB). Sayfaların hızlı açılması için küçültülebilir.</span>
+  <button class="btn btn--sm">Büyük görselleri küçült</button>
+</form>
+<?php endif; ?>
+<p class="hint">Yüklediğiniz fotoğraflar otomatik olarak en fazla 1920 piksele küçültülür ve sıkıştırılır; büyük orijinal sunucuda tutulmaz.</p>
 <p class="hint">Sitedeki bütün fotoğraflar burada. Etkinlik, blog ya da sayfalarda görsel seçerken de bu galeri açılır; bir fotoğrafı bir kez yükleyip istediğiniz yerde kullanabilirsiniz. Etkinlik galerilerine eklenen fotoğraflar sitedeki Galeri sayfasında etkinlik albümü olarak kendiliğinden görünür.</p>
 
 <section class="card">

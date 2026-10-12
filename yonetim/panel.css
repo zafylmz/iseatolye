@@ -443,3 +443,5 @@ input[type=checkbox],input[type=radio]{width:17px;height:17px;accent-color:var(-
 .fieldset legend{padding:0 6px;font-weight:600;font-size:13px;display:inline-flex;gap:8px;align-items:center}
 .inv-form{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:220px}
 .inv-form input{width:auto;flex:1 1 110px;min-width:0}
+.inline-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inline-form input{margin:0}

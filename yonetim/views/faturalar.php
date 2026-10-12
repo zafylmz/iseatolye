@@ -49,14 +49,14 @@ $self = fn(array $q) => panel_url(['s' => 'faturalar', 'd' => $tab, 'ay' => $fm]
     <thead><tr><th>Kayıt</th><th>Alıcı</th><th>Etkinlik</th><th>Tutar</th><th>Fatura</th></tr></thead>
     <tbody>
     <?php foreach ($rows as $r): $ev = event_by_id($r['event']); $corp = invoice_corporate($r); [$n, $v] = vat_split((float) $r['total']);
-      $copy = $corp ? $r['invoice']['title'] . "\n" . $r['invoice']['tax_office'] . ' VD · ' . $r['invoice']['tax_no'] . "\n" . $r['invoice']['address'] : $r['name'];
+      $copy = $corp ? $r['invoice']['title'] . "\n" . $r['invoice']['tax_office'] . ' VD · ' . $r['invoice']['tax_no'] . "\n" . $r['invoice']['address'] : $r['name'] . "\nTCKN " . ((trim((string) ($r['invoice']['tax_no'] ?? '')) ?: '11111111111 (yazılmadı)')) . (trim((string) ($r['invoice']['address'] ?? '')) !== '' ? "\n" . $r['invoice']['address'] : '');
       $item = ($ev['title'] ?? 'Etkinlik') . ' katılım bedeli (' . $r['ticket_name'] . ' × ' . (int) $r['qty'] . ')'; ?>
       <tr>
         <td><a href="./?s=kayit&amp;id=<?= e(urlencode($r['id'])) ?>"><strong class="mono-s"><?= e($r['code']) ?></strong></a><br><small class="muted"><?= e(tr_datetime($r['created'])) ?></small></td>
         <td>
           <?= $corp ? pill('Kurumsal', 'warn') : pill('Bireysel') ?>
           <strong><?= e($corp ? $r['invoice']['title'] : $r['name']) ?></strong>
-          <?php if ($corp): ?><br><small><?= e($r['invoice']['tax_office']) ?> VD · <?= e($r['invoice']['tax_no']) ?></small><br><small class="muted"><?= e($r['invoice']['address']) ?></small><?php else: ?><br><small class="muted"><?= e($r['email']) ?></small><?php endif; ?>
+          <?php if ($corp): ?><br><small><?= e($r['invoice']['tax_office']) ?> VD · <?= e($r['invoice']['tax_no']) ?></small><br><small class="muted"><?= e($r['invoice']['address']) ?></small><?php else: ?><br><small><?= trim((string) ($r['invoice']['tax_no'] ?? '')) !== '' ? 'TC ' . e($r['invoice']['tax_no']) : 'T.C. kimlik no yazılmadı' ?></small><?php if (trim((string) ($r['invoice']['address'] ?? '')) !== ''): ?><br><small class="muted"><?= e($r['invoice']['address']) ?></small><?php endif; ?><br><small class="muted"><?= e($r['email']) ?></small><?php endif; ?>
           <br><button type="button" class="btn btn--ghost btn--sm" data-copy="<?= e($copy) ?>">Alıcıyı kopyala</button>
         </td>
         <td><?= e($ev['title'] ?? 'Silinmiş') ?><br><small class="muted"><?= e($r['ticket_name']) ?> × <?= (int) $r['qty'] ?></small><br><button type="button" class="btn btn--ghost btn--sm" data-copy="<?= e($item) ?>">Hizmet adını kopyala</button></td>
