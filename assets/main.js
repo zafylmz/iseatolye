@@ -324,13 +324,19 @@
       const d = (form.querySelector('[data-delivery]:checked') || form.querySelector('input[name=delivery]') || {}).value || '';
       if (ship) ship.hidden = d !== 'kargo';
       const sub = parseFloat(form.dataset.price || '0') * q;
+      const pct = parseFloat(form.dataset.pct || '0');
+      const disc = Math.round(sub * pct) / 100;
       const free = parseFloat(form.dataset.free || '0');
-      const fee = d === 'kargo' && !(free > 0 && sub >= free) ? parseFloat(form.dataset.fee || '0') : 0;
+      const fee = d === 'kargo' && !(free > 0 && sub - disc >= free) ? parseFloat(form.dataset.fee || '0') : 0;
       const set = (sel, v) => { const el = $(sel); if (el) el.textContent = v; };
       set('[data-sum-qty]', q);
       set('[data-sum-sub]', fmt(sub));
+      const dr = $('[data-sum-disc-row]');
+      if (dr) dr.hidden = !(disc > 0);
+      set('[data-sum-pct]', pct > 0 ? '%' + pct : '');
+      set('[data-sum-disc]', '-' + fmt(disc));
       set('[data-sum-ship]', d !== 'kargo' ? '–' : fee > 0 ? fmt(fee) : 'Ücretsiz');
-      set('[data-sum-total]', fmt(sub + fee));
+      set('[data-sum-total]', fmt(sub - disc + fee));
     };
     $$('[data-qty]', form).forEach((b) => b.addEventListener('click', () => {
       qty.value = (parseInt(qty.value || '1', 10) || 1) + parseInt(b.dataset.qty, 10);
@@ -338,6 +344,27 @@
     }));
     form.addEventListener('input', update);
     form.addEventListener('change', update);
+    // İndirim kodu: "Uygula" kodu sunucuda denetler, geçerliyse özet indirimli güncellenir (sipariş verilirken yeniden denetlenir)
+    const code = $('[data-code]', form), codeMsg = $('[data-code-msg]', form), codeBtn = $('[data-code-apply]', form);
+    if (code && codeBtn) {
+      const say = (t, ok) => { if (codeMsg) { codeMsg.textContent = t; codeMsg.toggleAttribute('data-ok', !!ok); } };
+      const apply = async () => {
+        const v = code.value.trim();
+        form.dataset.pct = '0';
+        if (!v) { say('', false); update(); return; }
+        codeBtn.disabled = true;
+        try {
+          const r = await (await fetch(location.pathname + '?indirim=' + encodeURIComponent(v), { headers: { Accept: 'application/json' } })).json();
+          if (r.ok) { form.dataset.pct = String(r.pct); code.value = r.code; }
+          say(r.msg || '', r.ok);
+        } catch (e) { say('Kod denetlenemedi. Sipariş verirken yeniden denetlenecek.', false); }
+        codeBtn.disabled = false;
+        update();
+      };
+      codeBtn.addEventListener('click', apply);
+      code.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
+      code.addEventListener('input', () => { if (form.dataset.pct !== '0') { form.dataset.pct = '0'; say('', false); update(); } });
+    }
     update();
     if (form.hasAttribute('data-order') && !form.hasAttribute('data-guard-form')) form.addEventListener('submit', () => {
       const b = $('[data-join-btn]', form);

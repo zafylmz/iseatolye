@@ -8,18 +8,28 @@ require_once __DIR__ . '/inc/icons.php';
 $c = content();
 $p = product_by_slug((string) ($_GET['slug'] ?? ''));
 if (!$p || !product_visible($p)) { http_response_code(404); include __DIR__ . '/404.php'; exit; }
+// İndirim kodu denetimi (sipariş formundaki "Uygula" düğmesi): yalnızca geçerli mi ve oranı döner
+if (isset($_GET['indirim'])) {
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store');
+  if (!rate_hit('indirim:' . client_hash(), 30)) { echo json_encode(['ok' => false, 'msg' => 'Çok fazla deneme yaptınız, biraz sonra tekrar deneyin.']); exit; }
+  $dc = discount_find((string) $_GET['indirim']);
+  echo json_encode($dc ? ['ok' => true, 'code' => $dc['code'], 'pct' => (float) $dc['pct'], 'msg' => '%' . (float) $dc['pct'] . ' indirim uygulandı.'] : ['ok' => false, 'msg' => 'Bu indirim kodu geçersiz ya da süresi dolmuş.'], JSON_UNESCAPED_UNICODE);
+  exit;
+}
 $me = current_user();
 $max = product_max_qty($p);
 $methods = order_pay_methods();
 $deliveries = delivery_options();
 $errors = [];
-$old = ['qty' => max(1, min(max(1, $max), (int) ($_GET['adet'] ?? 1))), 'name' => $me['name'] ?? '', 'email' => $me['email'] ?? '', 'phone' => $me['phone'] ?? '', 'delivery' => $deliveries[0], 'address' => '', 'city' => $me['city'] ?? '', 'note' => '', 'method' => $methods[0] ?? ''];
+$old = ['qty' => max(1, min(max(1, $max), (int) ($_GET['adet'] ?? 1))), 'name' => $me['name'] ?? '', 'email' => $me['email'] ?? '', 'phone' => $me['phone'] ?? '', 'delivery' => $deliveries[0], 'address' => '', 'city' => $me['city'] ?? '', 'note' => '', 'method' => $methods[0] ?? '', 'code' => ''];
 $invOld = ['type' => ($_POST['inv_type'] ?? '') === 'kurumsal' ? 'kurumsal' : 'bireysel', 'title' => '', 'tax_office' => '', 'tax_no' => '', 'tckn' => '', 'address' => ''];
 foreach (['title', 'tax_office', 'tax_no', 'tckn', 'address'] as $k) $invOld[$k] = trim((string) ($_POST['inv_' . $k] ?? ''));
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $max > 0 && $methods) {
   foreach ($old as $k => $_) if (isset($_POST[$k])) $old[$k] = trim(str_replace("\r\n", "\n", (string) $_POST[$k]));
   $old['qty'] = max(1, (int) $old['qty']);
+  $old['code'] = mb_substr(discount_norm($old['code']), 0, 30);
   if ($me) { if (!member_csrf_ok()) $errors[] = 'Oturum süresi doldu. Sayfayı yenileyip tekrar deneyin.'; }
   else { $g = guard_check('siparis|' . $p['id']); if ($g === 'bot') { header('Location: /'); exit; } if ($g !== '') $errors[] = $g; }
   if (!$me) {
@@ -35,6 +45,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $max > 0 && $methods) {
   $old['address'] = mb_substr($old['address'], 0, 400);
   $old['city'] = mb_substr($old['city'], 0, 80);
   if (!in_array($old['method'], $methods, true)) $errors[] = 'Bir ödeme yöntemi seçin.';
+  if ($old['code'] !== '' && !discount_find($old['code'])) $errors[] = 'İndirim kodu geçersiz ya da süresi dolmuş. Kodu kontrol edin ya da alanı boş bırakın.';
   // Fatura adresi boşsa teslimat adresi kullanılır
   if (trim((string) ($_POST['inv_address'] ?? '')) === '' && $old['delivery'] === 'kargo') $_POST['inv_address'] = trim($old['address'] . ' ' . $old['city']);
   $inv = invoice_from_post($errors);
@@ -55,10 +66,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $max > 0 && $methods) {
       if ($old['qty'] > $left) return ['err', 'Bu üründen en fazla ' . $left . ' adet sipariş verebilirsiniz.'];
       $price = (float) $fresh['price'];
       $sub = round($price * $old['qty'], 2);
-      $ship = shipping_fee($old['delivery'], $sub);
+      $dc = null;
+      if ($old['code'] !== '' && !($dc = discount_find($old['code'], json_read(SHOP_FILE, SHOP_DEFAULT)['codes'] ?? []))) return ['err', 'İndirim kodu geçersiz ya da süresi dolmuş.'];
+      $disc = $dc ? discount_amount($sub, (float) $dc['pct']) : 0.0;
+      $ship = shipping_fee($old['delivery'], $sub - $disc);
       $o = [
         'id' => new_id(), 'code' => order_code($d['orders']), 'product' => $fresh['id'], 'product_name' => $fresh['name'],
-        'qty' => $old['qty'], 'unit_price' => $price, 'subtotal' => $sub, 'shipping' => $ship, 'total' => round($sub + $ship, 2),
+        'qty' => $old['qty'], 'unit_price' => $price, 'subtotal' => $sub, 'shipping' => $ship, 'total' => round($sub - $disc + $ship, 2),
+        'discount_code' => $dc['code'] ?? '', 'discount_pct' => $dc ? (float) $dc['pct'] : 0, 'discount' => $disc,
         'user' => $me['id'] ?? '', 'name' => $me['name'] ?? $old['name'], 'email' => $me['email'] ?? $old['email'], 'phone' => $old['phone'],
         'delivery' => $old['delivery'], 'address' => $old['delivery'] === 'kargo' ? trim($old['address'] . "\n" . $old['city']) : '',
         'note' => $old['note'], 'method' => $old['method'], 'invoice' => $inv, 'inv_no' => '', 'inv_date' => '',
@@ -84,12 +99,17 @@ $tok = $me ? member_csrf() : '';
 $img = product_cover($p);
 $fee = (float) shop_setting('shipping_fee', 0);
 $freeOver = (float) shop_setting('free_over', 0);
+$dcOld = $old['code'] !== '' ? discount_find($old['code']) : null;
+$pct = $dcOld ? (float) $dcOld['pct'] : 0.0;
+$sub0 = (float) $p['price'] * (int) $old['qty'];
+$disc0 = discount_amount($sub0, $pct);
+$ship0 = shipping_fee($old['delivery'], $sub0 - $disc0);
 include __DIR__ . '/inc/header.php';
 ?>
   <section class="wrap join">
     <a class="back" href="<?= e(product_url($p)) ?>"><?= icon('sol') ?>Ürüne dön</a>
     <div class="join__grid">
-      <form class="join__form" method="post" data-order data-price="<?= (float) $p['price'] ?>" data-fee="<?= $fee ?>" data-free="<?= $freeOver ?>"<?= !$me ? ' data-guard-form' : '' ?> novalidate>
+      <form class="join__form" method="post" data-order data-price="<?= (float) $p['price'] ?>" data-fee="<?= $fee ?>" data-free="<?= $freeOver ?>" data-pct="<?= $pct ?>"<?= !$me ? ' data-guard-form' : '' ?> novalidate>
         <p class="label">Sipariş</p>
         <h1 class="h2"><?= e($p['name']) ?></h1>
         <?php if ($errors): ?><div class="notice notice--err" role="alert"><?= icon('bilgi') ?><div><?php foreach ($errors as $er): ?><p><?= e($er) ?></p><?php endforeach; ?></div></div><?php endif; ?>
@@ -149,6 +169,11 @@ include __DIR__ . '/inc/header.php';
 
         <fieldset class="fs">
           <legend><span class="fs__n">5</span>Ödeme</legend>
+          <div class="code-field">
+            <label class="field">İndirim kodu <span class="opt-l">(varsa)</span><input name="code" value="<?= e($old['code']) ?>" maxlength="30" autocomplete="off" autocapitalize="characters" spellcheck="false" data-code></label>
+            <button type="button" class="btn btn--ghost" data-code-apply>Uygula</button>
+          </div>
+          <p class="small code-msg" role="status" data-code-msg<?= $dcOld ? ' data-ok' : '' ?>><?= $dcOld ? '%' . $pct . ' indirim uygulandı.' : '' ?></p>
           <div class="opts">
             <?php foreach ($methods as $m): ?>
               <label class="opt opt--row"><input type="radio" name="method" value="<?= $m ?>"<?= $old['method'] === $m ? ' checked' : '' ?> required><span class="opt__body"><strong><?= e(ORDER_PAY_METHODS[$m]) ?></strong><span><?= e(['kart' => 'PayTR güvenli ödeme sayfasında kartınızla ödersiniz. Ödeme alınınca siparişiniz hazırlanmaya başlar.', 'havale' => 'Siparişinizden sonra hesap bilgileri gösterilir. Ödemeniz ulaşınca siparişiniz hazırlanır.'][$m]) ?></span></span></label>
@@ -170,8 +195,9 @@ include __DIR__ . '/inc/header.php';
             <dl class="sum__rows">
               <div><dt>Adet</dt><dd data-sum-qty><?= (int) $old['qty'] ?></dd></div>
               <div><dt>Ürün tutarı</dt><dd data-sum-sub><?= money((float) $p['price'] * (int) $old['qty']) ?></dd></div>
-              <div><dt>Kargo</dt><dd data-sum-ship><?= $old['delivery'] === 'kargo' ? ((($s = shipping_fee('kargo', (float) $p['price'] * (int) $old['qty'])) > 0) ? money($s) : 'Ücretsiz') : '–' ?></dd></div>
-              <div class="sum__total"><dt>Toplam</dt><dd data-sum-total><?= money((float) $p['price'] * (int) $old['qty'] + shipping_fee($old['delivery'], (float) $p['price'] * (int) $old['qty'])) ?></dd></div>
+              <div data-sum-disc-row<?= $disc0 > 0 ? '' : ' hidden' ?>><dt>İndirim <span data-sum-pct><?= $pct > 0 ? '%' . $pct : '' ?></span></dt><dd data-sum-disc>-<?= money($disc0) ?></dd></div>
+              <div><dt>Kargo</dt><dd data-sum-ship><?= $old['delivery'] === 'kargo' ? ($ship0 > 0 ? money($ship0) : 'Ücretsiz') : '–' ?></dd></div>
+              <div class="sum__total"><dt>Toplam</dt><dd data-sum-total><?= money($sub0 - $disc0 + $ship0) ?></dd></div>
             </dl>
             <p class="muted small">Fiyatlara KDV dahildir.</p>
           </div>

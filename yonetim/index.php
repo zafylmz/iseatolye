@@ -93,7 +93,7 @@ if (logged_in() && $view === 'galeri' && !empty($_GET['parca'])) {
 }
 
 $f = flash();
-$views = ['pano', 'etkinlikler', 'etkinlik', 'katilimlar', 'kayit', 'mekanlar', 'uyeler', 'uye', 'yorumlar', 'mesajlar', 'blog', 'yazi', 'galeri', 'sayfalar', 'ayarlar', 'istatistik', 'kontrol', 'sifre', 'faturalar', 'urunler', 'urun', 'siparisler', 'siparis'];
+$views = ['pano', 'etkinlikler', 'etkinlik', 'katilimlar', 'kayit', 'mekanlar', 'uyeler', 'uye', 'yorumlar', 'mesajlar', 'blog', 'yazi', 'galeri', 'sayfalar', 'ayarlar', 'istatistik', 'kontrol', 'sifre', 'faturalar', 'urunler', 'urun', 'siparisler', 'siparis', 'indirimler'];
 if (!in_array($view, [...$views, 'setup', 'login'], true)) $view = 'pano';
 
 // Rozetler: bekleyen işler
@@ -111,12 +111,12 @@ $todoOrders = count(array_filter($orders, fn($o) => $o['status'] === 'hazirlaniy
 $nav = [
   'Genel' => ['pano' => 'Pano'],
   'Etkinlik' => ['etkinlikler' => 'Etkinlikler', 'katilimlar' => 'Katılımlar' . $badge($pendingRegs), 'faturalar' => 'Faturalar' . $badge(count(array_filter($regs, 'invoice_due'))), 'mekanlar' => 'Mekan ve eğitmenler'],
-  'Mağaza' => ['urunler' => 'Ürünler', 'siparisler' => 'Siparişler' . $badge($todoOrders)],
+  'Mağaza' => ['urunler' => 'Ürünler', 'siparisler' => 'Siparişler' . $badge($todoOrders), 'indirimler' => 'İndirim kodları'],
   'Topluluk' => ['uyeler' => 'Üyeler', 'yorumlar' => 'Yorumlar' . $badge($pendingCm), 'mesajlar' => 'Mesajlar' . $badge($unread)],
   'Site' => ['galeri' => 'Galeri', 'blog' => 'Blog', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre'],
 ];
 $activeTab = ['etkinlik' => 'etkinlikler', 'kayit' => 'katilimlar', 'uye' => 'uyeler', 'yazi' => 'blog', 'urun' => 'urunler', 'siparis' => 'siparisler'][$view] ?? $view;
-$titles = ['pano' => 'Pano', 'etkinlikler' => 'Etkinlikler', 'etkinlik' => 'Etkinlik', 'katilimlar' => 'Katılımlar', 'kayit' => 'Kayıt', 'mekanlar' => 'Mekan ve eğitmenler', 'uyeler' => 'Üyeler', 'uye' => 'Üye', 'yorumlar' => 'Yorumlar', 'mesajlar' => 'Mesajlar', 'blog' => 'Blog', 'yazi' => 'Yazı', 'galeri' => 'Galeri', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre', 'faturalar' => 'Faturalar', 'urunler' => 'Ürünler', 'urun' => 'Ürün', 'siparisler' => 'Siparişler', 'siparis' => 'Sipariş', 'setup' => 'Kurulum', 'login' => 'Giriş'];
+$titles = ['pano' => 'Pano', 'etkinlikler' => 'Etkinlikler', 'etkinlik' => 'Etkinlik', 'katilimlar' => 'Katılımlar', 'kayit' => 'Kayıt', 'mekanlar' => 'Mekan ve eğitmenler', 'uyeler' => 'Üyeler', 'uye' => 'Üye', 'yorumlar' => 'Yorumlar', 'mesajlar' => 'Mesajlar', 'blog' => 'Blog', 'yazi' => 'Yazı', 'galeri' => 'Galeri', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre', 'faturalar' => 'Faturalar', 'urunler' => 'Ürünler', 'urun' => 'Ürün', 'siparisler' => 'Siparişler', 'siparis' => 'Sipariş', 'indirimler' => 'İndirim kodları', 'setup' => 'Kurulum', 'login' => 'Giriş'];
 ?><!doctype html>
 <html lang="tr">
 <head><meta charset="utf-8">

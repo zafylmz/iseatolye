@@ -9,7 +9,7 @@ require_once __DIR__ . '/auth.php';
 
 const SHOP_FILE = DATA . '/magaza.json';
 const ORDERS_FILE = DATA . '/siparisler.json';
-const SHOP_DEFAULT = ['products' => [], 'settings' => []];
+const SHOP_DEFAULT = ['products' => [], 'settings' => [], 'codes' => []];
 
 const PRODUCT_STATUS = ['yayinda' => 'Satışta', 'taslak' => 'Taslak (sitede görünmez)'];
 const ORDER_STATUS = [
@@ -152,6 +152,31 @@ function shipping_fee(string $delivery, float $subtotal): float {
 }
 
 // Ürünler yalnızca kargoyla gönderilir ('elden' yalnızca eski siparişlerin gösterimi için DELIVERY'de duruyor).
+// İndirim kodları (panel > Mağaza > İndirim kodları): ürün tutarına yüzde indirim, son gün dahil geçerli
+function discount_norm(string $c): string {
+  return strtoupper(preg_replace('/\s+/', '', $c));
+}
+
+function discount_codes(): array {
+  return shop()['codes'] ?? [];
+}
+
+function discount_state(array $d): string {
+  if (empty($d['active'])) return 'kapali';
+  return ($d['until'] ?? '') !== '' && $d['until'] < date('Y-m-d') ? 'doldu' : 'aktif';
+}
+
+function discount_find(string $code, ?array $codes = null): ?array {
+  $code = discount_norm($code);
+  if ($code === '') return null;
+  foreach ($codes ?? discount_codes() as $d) if (($d['code'] ?? '') === $code && discount_state($d) === 'aktif') return $d;
+  return null;
+}
+
+function discount_amount(float $subtotal, float $pct): float {
+  return round($subtotal * max(0, min(100, $pct)) / 100, 2);
+}
+
 function delivery_options(): array {
   return ['kargo'];
 }
@@ -204,6 +229,7 @@ function order_summary(array $o): string {
     'Ürün: ' . $o['product_name'] . ' × ' . (int) $o['qty'],
     'Ürün tutarı: ' . money($o['subtotal']),
   ];
+  if ((float) ($o['discount'] ?? 0) > 0) $lines[] = 'İndirim (' . $o['discount_code'] . ', %' . (float) $o['discount_pct'] . '): -' . money($o['discount']);
   if (($o['delivery'] ?? '') === 'kargo') $lines[] = 'Kargo: ' . ((float) $o['shipping'] > 0 ? money($o['shipping']) : 'Ücretsiz');
   $lines[] = 'Toplam: ' . money($o['total']);
   $lines[] = 'Teslimat: ' . (DELIVERY[$o['delivery']] ?? '') . (($o['delivery'] ?? '') === 'kargo' ? "\nAdres: " . $o['address'] : '');
@@ -249,7 +275,9 @@ function paytr_start_order(array $o): array {
   if (!$cfg) return ['err', 'Kartla ödeme şu an kullanılamıyor.'];
   $inv = $o['invoice'] ?? [];
   $addr = trim((string) ($o['address'] ?? '')) ?: trim((string) ($inv['address'] ?? '')) ?: trim((string) (content()['contact']['address'] ?? '')) ?: 'Türkiye';
-  $basket = [[mb_substr($o['product_name'], 0, 120), number_format((float) $o['unit_price'], 2, '.', ''), (int) $o['qty']]];
+  $basket = (float) ($o['discount'] ?? 0) > 0
+    ? [[mb_substr($o['product_name'] . ' × ' . (int) $o['qty'] . ' (%' . (float) $o['discount_pct'] . ' indirimli)', 0, 120), number_format((float) $o['subtotal'] - (float) $o['discount'], 2, '.', ''), 1]]
+    : [[mb_substr($o['product_name'], 0, 120), number_format((float) $o['unit_price'], 2, '.', ''), (int) $o['qty']]];
   if ((float) $o['shipping'] > 0) $basket[] = ['Kargo', number_format((float) $o['shipping'], 2, '.', ''), 1];
   $back = site_url(order_url($o, true));
   [$ok, $res] = paytr_token($cfg, [

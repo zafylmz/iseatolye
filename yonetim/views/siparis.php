@@ -51,6 +51,7 @@ $back = './?s=siparisler';
       <dl class="dl">
         <div><dt>Ürün</dt><dd><?= $p ? '<a href="./?s=urun&amp;id=' . e(urlencode($p['id'])) . '">' . e($o['product_name']) . '</a>' : e($o['product_name']) . ' (silinmiş)' ?></dd></div>
         <div><dt>Adet</dt><dd><?= (int) $o['qty'] ?> × <?= e(money($o['unit_price'])) ?> = <?= e(money($o['subtotal'])) ?></dd></div>
+        <?php if ((float) ($o['discount'] ?? 0) > 0): ?><div><dt>İndirim</dt><dd><?= e($o['discount_code']) ?> (%<?= (float) $o['discount_pct'] ?>): -<?= e(money($o['discount'])) ?></dd></div><?php endif; ?>
         <div><dt>Teslimat</dt><dd><?= e(DELIVERY[$o['delivery']] ?? '') ?><?= $o['delivery'] === 'kargo' ? ' · ' . ((float) $o['shipping'] > 0 ? e(money($o['shipping'])) : 'ücretsiz') : '' ?></dd></div>
         <div><dt>Toplam</dt><dd><b><?= e(money($o['total'])) ?></b> · <?= e(ORDER_PAY_METHODS[$o['method']] ?? $o['method']) ?></dd></div>
         <?php if (trim((string) ($o['pay_ref'] ?? '')) !== ''): ?><div><dt>Kart ödemesi no</dt><dd><code><?= e($o['pay_ref']) ?></code></dd></div><?php endif; ?>

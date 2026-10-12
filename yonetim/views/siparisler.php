@@ -11,7 +11,7 @@ $rows = array_values(array_filter($orders, function ($o) use ($fp, $fst, $fq, $f
   if ($fp !== '' && ($o['product'] ?? '') !== $fp) return false;
   if ($fst !== '' && $o['status'] !== $fst) return false;
   if ($finv && !(!empty($o['paid']) && $o['status'] !== 'iptal' && trim((string) ($o['inv_no'] ?? '')) === '')) return false;
-  if ($fq !== '' && !str_contains(mb_strtolower($o['name'] . ' ' . $o['email'] . ' ' . $o['phone'] . ' ' . $o['code'] . ' ' . $o['product_name']), mb_strtolower($fq))) return false;
+  if ($fq !== '' && !str_contains(mb_strtolower($o['name'] . ' ' . $o['email'] . ' ' . $o['phone'] . ' ' . $o['code'] . ' ' . $o['product_name'] . ' ' . ($o['discount_code'] ?? '')), mb_strtolower($fq))) return false;
   return true;
 }));
 usort($rows, fn($a, $b) => strcmp($b['created'], $a['created']));
@@ -45,7 +45,7 @@ $paidSum = array_sum(array_map(fn($o) => !empty($o['paid']) && $o['status'] !== 
         }; ?>
         <tr class="<?= $o['status'] === 'iptal' ? 'is-off' : '' ?>">
           <td><a href="./?s=siparis&amp;id=<?= e(urlencode($o['id'])) ?>"><strong><?= e($o['name']) ?></strong></a><?= ($o['user'] ?? '') !== '' ? ' <span class="tag">üye</span>' : '' ?><small><?= e($o['phone']) ?> · <?= e($o['email']) ?></small><small class="mono-s"><?= e($o['code']) ?> · <?= e(time_ago($o['created'])) ?></small><?php if (trim($o['note'] ?? '') !== ''): ?><small class="note">“<?= e($o['note']) ?>”</small><?php endif; ?></td>
-          <td><?= e($o['product_name']) ?><small><?= (int) $o['qty'] ?> adet × <?= e(money($o['unit_price'])) ?></small></td>
+          <td><?= e($o['product_name']) ?><small><?= (int) $o['qty'] ?> adet × <?= e(money($o['unit_price'])) ?></small><?php if ((float) ($o['discount'] ?? 0) > 0): ?><small><?= e($o['discount_code']) ?> · %<?= (float) $o['discount_pct'] ?> indirim</small><?php endif; ?></td>
           <td><?= e($o['delivery'] === 'kargo' ? 'Kargo' : 'Atölyeden') ?><?php if (trim((string) ($o['cargo'] ?? '')) !== ''): ?><small><?= e($o['cargo']) ?></small><?php endif; ?></td>
           <td><?= pill(ORDER_STATUS[$o['status']] ?? $o['status'], ['beklemede' => 'warn', 'hazirlaniyor' => 'info', 'kargoda' => 'on', 'teslim' => 'on', 'iptal' => 'off'][$o['status']] ?? '') ?><?= order_hold_expired($o) ? ' <small class="muted" title="Ödeme süresi doldu; ürün ayırması kalktı. Ödeme gelirse ödendi işaretleyin.">süre doldu</small>' : '' ?></td>
           <td><?= e(money($o['total'])) ?><small class="<?= !empty($o['paid']) ? 'ok' : 'warn' ?>"><?= !empty($o['paid']) ? 'Ödendi' : 'Bekliyor' ?> · <?= e(ORDER_PAY_METHODS[$o['method']] ?? $o['method']) ?></small><?php if (!empty($o['test_paid']) && empty($o['paid'])): ?><small class="muted">test ödemesi</small><?php endif; ?></td>

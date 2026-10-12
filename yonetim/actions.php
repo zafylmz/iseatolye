@@ -829,6 +829,33 @@ switch ($action) {
     flash('"' . $p['name'] . '" silindi. Bu ürünün eski siparişleri Siparişler bölümünde kalır.');
     redirect('./?s=urunler');
 
+  case 'indirim':
+    $code = discount_norm(post('code'));
+    $old = (string) ($_POST['old'] ?? '');
+    $pct = post_int('pct', 0, 100);
+    $until = post('until');
+    if (!preg_match('/^[A-Z0-9_-]{3,30}$/', $code)) throw new RuntimeException('Kod 3-30 karakter olmalı; yalnızca harf (Türkçe karakter olmadan), rakam, - ve _ kullanın.');
+    if ($pct < 1) throw new RuntimeException('İndirim oranı 1 ile 100 arasında olmalı.');
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $until) || !strtotime($until)) throw new RuntimeException('Son geçerlilik gününü seçin.');
+    $err = json_update(SHOP_FILE, function (array &$d) use ($code, $old, $pct, $until) {
+      $d += SHOP_DEFAULT;
+      foreach ($d['codes'] as $x) if ($x['code'] === $code && $x['code'] !== $old) return 'Bu kod zaten var. Değiştirmek için listeden Düzenle\'ye basın.';
+      $row = ['code' => $code, 'pct' => $pct, 'until' => $until, 'active' => !empty($_POST['active']), 'updated' => date('Y-m-d H:i')];
+      foreach ($d['codes'] as &$x) if ($old !== '' && $x['code'] === $old) { $x = $row + $x; return ''; }
+      unset($x);
+      $d['codes'][] = $row + ['created' => date('Y-m-d H:i')];
+      return '';
+    }, SHOP_DEFAULT);
+    if ($err !== '') throw new RuntimeException($err);
+    flash($code . ' kaydedildi: %' . $pct . ' indirim, ' . tr_date($until) . ' sonuna kadar' . (empty($_POST['active']) ? ' (kapalı)' : '') . '.');
+    redirect('./?s=indirimler');
+
+  case 'indirim-sil':
+    $code = (string) ($_POST['code'] ?? '');
+    json_update(SHOP_FILE, function (array &$d) use ($code) { $d += SHOP_DEFAULT; $d['codes'] = array_values(array_filter($d['codes'], fn($x) => $x['code'] !== $code)); }, SHOP_DEFAULT);
+    flash($code . ' silindi.');
+    redirect('./?s=indirimler');
+
   case 'magaza-ayar':
     $set = [
       'title' => mb_substr(post('title'), 0, 80),

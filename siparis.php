@@ -41,6 +41,7 @@ include __DIR__ . '/inc/header.php';
         <h2 class="h2"><?php if ($p && product_visible($p)): ?><a href="<?= e(product_url($p)) ?>"><?= e($o['product_name']) ?></a><?php else: ?><?= e($o['product_name']) ?><?php endif; ?></h2>
         <ul class="ticket__meta">
           <li><?= icon('canta') ?><?= (int) $o['qty'] ?> adet × <?= money($o['unit_price']) ?></li>
+          <?php if ((float) ($o['discount'] ?? 0) > 0): ?><li><?= icon('onay') ?>İndirim kodu <?= e($o['discount_code']) ?> (%<?= (float) $o['discount_pct'] ?>): -<?= money($o['discount']) ?></li><?php endif; ?>
           <li><?= icon('kargo') ?><?= e(DELIVERY[$o['delivery']] ?? '') ?><?= $o['delivery'] === 'kargo' ? ' · ' . ((float) $o['shipping'] > 0 ? money($o['shipping']) : 'ücretsiz') : '' ?></li>
           <?php if ($o['delivery'] === 'kargo'): ?><li><?= icon('konum') ?><?= nl2br(e($o['address'])) ?></li><?php endif; ?>
           <li><?= icon('kisi') ?><?= e($o['name']) ?> · <?= e($o['phone']) ?></li>
