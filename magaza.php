@@ -119,7 +119,6 @@ include __DIR__ . '/inc/header.php';
             <?php if (in_array('kargo', delivery_options(), true)): $fee = (float) shop_setting('shipping_fee', 0); $free = (float) shop_setting('free_over', 0); ?>
               <li><?= icon('kargo') ?>Kargo ile adrese teslim<?= $fee > 0 ? ': ' . money($fee) . ($free > 0 ? ', ' . money($free) . ' ve üzeri ücretsiz' : '') : ': ücretsiz' ?><?= trim((string) shop_setting('ship_days', '')) !== '' ? ' · ' . e(shop_setting('ship_days')) : '' ?></li>
             <?php endif; ?>
-            <?php if (in_array('elden', delivery_options(), true)): ?><li><?= icon('konum') ?>Atölyeden ücretsiz teslim alabilirsiniz<?= trim((string) shop_setting('pickup_note', '')) !== '' ? ' · ' . e(shop_setting('pickup_note')) : '' ?></li><?php endif; ?>
             <?php if (!empty($p['no_return'])): ?><li><?= icon('bilgi') ?>Bu ürün kişiye özel hazırlandığı için cayma hakkı kapsamında değildir. Ayıplı ürünlerde yasal haklarınız saklıdır. <a class="link" href="/mesafeli-satis/#urun-satisi">Ayrıntılar</a></li>
             <?php else: ?><li><?= icon('geri') ?>Teslimattan sonraki 14 gün içinde cayma hakkınız vardır. <a class="link" href="/mesafeli-satis/#urun-satisi">Ayrıntılar</a></li><?php endif; ?>
           </ul>

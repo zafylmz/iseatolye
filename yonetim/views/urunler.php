@@ -39,17 +39,12 @@ $st = shop()['settings'] ?? [];
   <label>Tanıtım yazısı <span class="opt">(paragrafları boş satırla ayırın)</span><textarea name="about" rows="7" maxlength="3000"><?= e(shop_text('about')) ?></textarea></label>
   <p class="sub">Yazının yanındaki kayan galeri <span class="opt">(boşsa ürün ve galeri fotoğrafları gösterilir; sürükleyerek sıralayabilirsiniz)</span></p>
   <?= image_field('slides', $st['slides'] ?? [], ['multi' => true, 'hint' => 'Kare ya da dikey fotoğraflar en iyi sonucu verir.']) ?>
-  <p class="sub">Teslimat</p>
-  <div class="checks checks--col">
-    <label class="check"><input type="checkbox" name="ship" value="1"<?= ($st['ship'] ?? true) ? ' checked' : '' ?>> Kargo ile gönderim</label>
-    <label class="check"><input type="checkbox" name="pickup" value="1"<?= ($st['pickup'] ?? true) ? ' checked' : '' ?>> Atölyeden teslim alma</label>
-  </div>
+  <p class="sub">Kargo</p>
   <div class="grid3">
     <label>Kargo ücreti (₺) <span class="opt">(0 = ücretsiz)</span><input name="shipping_fee" value="<?= e((string) ($st['shipping_fee'] ?? 0)) ?>" inputmode="decimal"></label>
     <label>Ücretsiz kargo sınırı (₺) <span class="opt">(0 = yok)</span><input name="free_over" value="<?= e((string) ($st['free_over'] ?? 0)) ?>" inputmode="decimal"></label>
     <label>Gönderim süresi <span class="opt">(isteğe bağlı)</span><input name="ship_days" value="<?= e($st['ship_days'] ?? '') ?>" maxlength="80" placeholder="1-3 iş günü içinde kargoda"></label>
   </div>
-  <label>Atölyeden teslim notu <span class="opt">(isteğe bağlı)</span><input name="pickup_note" value="<?= e($st['pickup_note'] ?? '') ?>" maxlength="160" placeholder="Hafta içi 10:00-18:00, Silivri"></label>
   <p class="hint">Ödeme yöntemleri etkinliklerle aynıdır: kartla ödeme <a href="./?s=ayarlar#kart">PayTR bilgileri</a> girilince, havale <a href="./?s=ayarlar#odeme">IBAN</a> girilince görünür. Ödenmeyen havale siparişleri, Ayarlar'daki havale süresi dolunca ürünü ayırmayı bırakır.</p>
   <div><button class="btn">Kaydet</button></div>
 </form>

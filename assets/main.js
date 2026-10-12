@@ -321,7 +321,7 @@
       if (String(q) !== qty.value) qty.value = q;
       $$('[data-qty]', form).forEach((b) => { b.disabled = b.dataset.qty === '-1' ? q <= 1 : q >= max; });
       if (!form.hasAttribute('data-order')) return;
-      const d = (form.querySelector('[data-delivery]:checked') || {}).value || '';
+      const d = (form.querySelector('[data-delivery]:checked') || form.querySelector('input[name=delivery]') || {}).value || '';
       if (ship) ship.hidden = d !== 'kargo';
       const sub = parseFloat(form.dataset.price || '0') * q;
       const free = parseFloat(form.dataset.free || '0');

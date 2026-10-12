@@ -119,11 +119,8 @@ include __DIR__ . '/inc/header.php';
 
         <fieldset class="fs">
           <legend><span class="fs__n">3</span>Teslimat</legend>
-          <div class="opts">
-            <?php foreach ($deliveries as $dv): ?>
-              <label class="opt opt--row"><input type="radio" name="delivery" value="<?= $dv ?>"<?= $old['delivery'] === $dv ? ' checked' : '' ?> required data-delivery><span class="opt__body"><strong><?= e(DELIVERY[$dv]) ?></strong><span><?= $dv === 'kargo' ? e(($fee > 0 ? 'Kargo ücreti ' . money($fee) . ($freeOver > 0 ? ', ' . money($freeOver) . ' ve üzeri siparişlerde ücretsiz' : '') : 'Kargo ücretsiz') . (trim((string) shop_setting('ship_days', '')) !== '' ? ' · ' . shop_setting('ship_days') : '')) : e(trim((string) shop_setting('pickup_note', '')) ?: 'Siparişiniz hazır olunca size haber veririz.') ?></span></span></label>
-            <?php endforeach; ?>
-          </div>
+          <input type="hidden" name="delivery" value="kargo">
+          <p class="muted small"><?= icon('kargo') ?> <?= e(DELIVERY['kargo']) ?> · <?= e(($fee > 0 ? 'Kargo ücreti ' . money($fee) . ($freeOver > 0 ? ', ' . money($freeOver) . ' ve üzeri siparişlerde ücretsiz' : '') : 'Kargo ücretsiz') . (trim((string) shop_setting('ship_days', '')) !== '' ? ' · ' . shop_setting('ship_days') : '')) ?></p>
           <div data-ship<?= $old['delivery'] !== 'kargo' ? ' hidden' : '' ?>>
             <label class="field">Teslimat adresi <span class="opt-l">(mahalle, sokak, bina ve daire no)</span><textarea name="address" rows="2" maxlength="400" autocomplete="street-address"><?= e($old['address']) ?></textarea></label>
             <label class="field">İl / ilçe<input name="city" value="<?= e($old['city']) ?>" maxlength="80" placeholder="İstanbul / Silivri"></label>

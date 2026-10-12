@@ -835,14 +835,10 @@ switch ($action) {
       'tagline' => mb_substr(post('tagline'), 0, 200),
       'about' => mb_substr(post('about'), 0, 3000),
       'slides' => gallery_pick('slides', (array) shop_setting('slides', [])),
-      'ship' => !empty($_POST['ship']),
       'shipping_fee' => price_input(post('shipping_fee')),
       'free_over' => price_input(post('free_over')),
       'ship_days' => mb_substr(post('ship_days'), 0, 80),
-      'pickup' => !empty($_POST['pickup']),
-      'pickup_note' => mb_substr(post('pickup_note'), 0, 160),
     ];
-    if (!$set['ship'] && !$set['pickup']) throw new RuntimeException('En az bir teslimat şekli (kargo ya da atölyeden teslim) açık olmalı.');
     json_update(SHOP_FILE, function (array &$d) use ($set) { $d += SHOP_DEFAULT; $d['settings'] = $set + (array) $d['settings']; }, SHOP_DEFAULT);
     flash('Mağaza ayarları kaydedildi.');
     redirect('./?s=urunler#ayarlar');

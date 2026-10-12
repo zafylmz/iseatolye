@@ -151,11 +151,9 @@ function shipping_fee(string $delivery, float $subtotal): float {
   return $free > 0 && $subtotal >= $free ? 0.0 : $fee;
 }
 
+// Ürünler yalnızca kargoyla gönderilir ('elden' yalnızca eski siparişlerin gösterimi için DELIVERY'de duruyor).
 function delivery_options(): array {
-  $o = [];
-  if (shop_setting('ship', true)) $o[] = 'kargo';
-  if (shop_setting('pickup', true)) $o[] = 'elden';
-  return $o ?: ['kargo'];
+  return ['kargo'];
 }
 
 function order_pay_methods(): array {
