@@ -10,6 +10,16 @@ require_once ROOT . '/inc/shop.php';
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
 
+// Panele daha önce giriş yapılmış tarayıcı (1 yıl). Şifre değişince geçersiz olur.
+// Çok sayıda farklı adresten şifre denenirse yeni cihazlardan giriş kapanır, bu tarayıcılardan girilebilir.
+const PANEL_DEVICE_COOKIE = 'ise_panel_cihaz';
+const PANEL_GLOBAL_LIMIT = 30; // tanınmayan cihazlardan saatte toplam deneme
+function panel_device_mark(string $v): string { return hash_hmac('sha256', 'panel-cihaz|' . $v, secret()); }
+function panel_known_device(): bool { return hash_equals(panel_device_mark(auth_version()), (string) ($_COOKIE[PANEL_DEVICE_COOKIE] ?? '')); }
+function panel_device_set(string $v): void {
+  setcookie(PANEL_DEVICE_COOKIE, panel_device_mark($v), ['expires' => time() + 31536000, 'path' => '/yonetim', 'samesite' => 'Strict', 'httponly' => true, 'secure' => https()]);
+}
+
 // Panel sahibinin tarayıcısını sayaçta saymamak için çerez (site geneli, 1 yıl).
 function skip_cookie(bool $on): void {
   setcookie(STATS_SKIP_COOKIE, $on ? '1' : '', ['expires' => $on ? time() + 31536000 : time() - 3600, 'path' => '/', 'samesite' => 'Lax', 'httponly' => true, 'secure' => https()]);
@@ -33,6 +43,7 @@ if (!has_password()) {
     @unlink(SETUP_KEY_FILE);
     session_regenerate_id(true);
     $_SESSION['ok'] = true;
+    panel_device_set((string) $_SESSION['pv']);
     skip_cookie(true);
     flash('Şifreniz oluşturuldu. Panele hoş geldiniz.');
     redirect('./');
@@ -45,12 +56,15 @@ if (!has_password()) {
     // Bir saatte 10 hatalı denemeden sonra giriş geçici olarak kapanır. Deneme hakkı şifre kontrolünden önce ayrılır,
     // böylece aynı anda gönderilen istekler sınırı aşamaz.
     if (!rate_hit('panel:' . client_hash(), 10)) { flash('Çok fazla hatalı deneme yapıldı. Bir saat sonra tekrar deneyin.', 'err'); redirect('./'); }
+    // Farklı adreslerden yapılan denemeler de toplamda sınırlanır; daha önce giriş yapılmış tarayıcı bu sınırdan etkilenmez
+    if (!panel_known_device() && !rate_hit('panel-tum', PANEL_GLOBAL_LIMIT)) { flash('Panele kısa sürede çok sayıda hatalı giriş denendiği için yeni cihazlardan giriş bir saatliğine kapatıldı. Daha önce panele girdiğiniz tarayıcıdan girebilirsiniz.', 'err'); redirect('./'); }
     if (password_verify((string) ($_POST['password'] ?? ''), password_hash_stored())) {
       // Başarılı girişte bu adresin deneme kaydı silinir
       json_update(RATE_FILE, function (array &$r) { unset($r['panel:' . client_hash()]); });
       session_regenerate_id(true);
       $_SESSION['ok'] = true;
       $_SESSION['pv'] = auth_version();
+      panel_device_set(auth_version());
       if (!isset($_COOKIE[STATS_SKIP_COOKIE])) skip_cookie(true);
       redirect('./' . (preg_match('/^[a-z-]+$/', (string) ($_POST['s'] ?? '')) ? '?s=' . $_POST['s'] : ''));
     }

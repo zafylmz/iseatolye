@@ -16,6 +16,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $u = str_contains($login, '@') ? user_by('email', $login) : user_by('username', $login);
     if ($u && password_verify((string) ($_POST['password'] ?? ''), (string) $u['hash'])) {
       if (($u['status'] ?? 'aktif') !== 'aktif') $err = 'Bu üyelik askıya alınmış. Bizimle iletişime geçin.';
+      elseif (!user_verified($u)) $err = send_verify_mail($u, $donus)
+        ? 'E-posta adresinizi henüz doğrulamadınız. Size yeni bir doğrulama bağlantısı gönderdik, gelen kutunuzu (ve gereksiz klasörünü) kontrol edin.'
+        : 'E-posta adresinizi henüz doğrulamadınız. Doğrulama bağlantısı az önce gönderildi, gelen kutunuzu (ve gereksiz klasörünü) kontrol edin.';
       else { user_login($u, !empty($_POST['remember'])); header('Location: ' . $donus, true, 303); exit; }
     } else { sleep(1); $err = 'E-posta/kullanıcı adı ya da şifre hatalı.'; }
   }

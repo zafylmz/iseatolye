@@ -30,7 +30,7 @@ $withReg = count(array_filter($users, fn($u) => isset($regCount[$u['id']])));
     <tbody>
       <?php foreach ($list as $u): ?>
         <tr class="<?= ($u['status'] ?? 'aktif') !== 'aktif' ? 'is-off' : '' ?>">
-          <td><a class="person" href="./?s=uye&amp;id=<?= e(urlencode($u['id'])) ?>"><?= avatar($u, 'sm') ?><span><strong><?= e($u['name']) ?></strong><small>@<?= e($u['username']) ?><?= ($u['status'] ?? 'aktif') !== 'aktif' ? ' · askıda' : '' ?></small></span></a></td>
+          <td><a class="person" href="./?s=uye&amp;id=<?= e(urlencode($u['id'])) ?>"><?= avatar($u, 'sm') ?><span><strong><?= e($u['name']) ?></strong><small>@<?= e($u['username']) ?><?= ($u['status'] ?? 'aktif') !== 'aktif' ? ' · askıda' : '' ?><?= !user_verified($u) ? ' · e-posta doğrulanmadı' : '' ?></small></span></a></td>
           <td><?= e($u['email']) ?><small><?= e($u['phone'] ?? '') ?></small></td>
           <td><?= $regCount[$u['id']] ?? 0 ?></td>
           <td><?= $cmCount[$u['id']] ?? 0 ?></td>

@@ -4,9 +4,23 @@ require_once __DIR__ . '/inc/auth.php';
 require_once __DIR__ . '/inc/icons.php';
 $c = content();
 $donus = safe_return((string) ($_GET['donus'] ?? $_POST['donus'] ?? '/hesabim/'));
+$verifyErr = false;
+// E-postadaki doğrulama bağlantısı: üyelik açılır, giriş yapılır, hoş geldin e-postası gider
+if (($t = (string) ($_GET['t'] ?? '')) !== '') {
+  if ($res = verify_user_token($t)) {
+    [$u, $to] = $res;
+    user_login($u, true);
+    send_mail($u['email'], $c['brand']['name'] . ' topluluğuna hoş geldiniz', "Merhaba " . $u['name'] . ",\n\nÜyeliğiniz oluşturuldu. Artık etkinliklere birkaç adımda katılabilir, yorum yazabilir ve katılmayı düşündüğünüz etkinlikleri işaretleyebilirsiniz.\n\nProfiliniz: " . site_url(user_url($u)) . "\nYaklaşan etkinlikler: " . site_url('/etkinlikler/'));
+    member_flash('Hoş geldiniz ' . explode(' ', $u['name'])[0] . '! E-postanız doğrulandı, üyeliğiniz açıldı.');
+    header('Location: ' . ($to === '/hesabim/' ? '/hesabim/?s=profil&yeni=1' : $to), true, 303);
+    exit;
+  }
+  $verifyErr = true;
+}
 if (current_user()) { header('Location: ' . $donus); exit; }
 member_session();
 $errors = [];
+$pending = '';
 $old = ['name' => '', 'email' => '', 'phone' => ''];
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   foreach ($old as $k => $_) $old[$k] = trim((string) ($_POST[$k] ?? ''));
@@ -20,7 +34,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   if (!$errors) {
     if (mb_strlen($old['name']) < 3 || mb_strlen($old['name']) > 60 || preg_match('#https?://|www\.|[a-z0-9-]\.[a-z]{2,}\b|[/@<>]#iu', $old['name'])) $errors[] = 'Adınızı ve soyadınızı yazın.';
     if (!filter_var($old['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Geçerli bir e-posta adresi yazın.';
-    elseif (user_by('email', $old['email'])) $errors[] = 'Bu e-posta ile zaten bir üyelik var. <a href="/giris/">Giriş yapın</a> ya da <a href="/sifremi-unuttum/">şifrenizi yenileyin</a>.';
+    elseif (($ex = user_by('email', $old['email'])) && user_verified($ex)) $errors[] = 'Bu e-posta ile zaten bir üyelik var. <a href="/giris/">Giriş yapın</a> ya da <a href="/sifremi-unuttum/">şifrenizi yenileyin</a>.';
     if ($old['phone'] !== '' && !preg_match('/^\+?[0-9 ()-]{10,20}$/', $old['phone'])) $errors[] = 'Telefon numarası geçerli görünmüyor.';
     if (mb_strlen($pass) < 8) $errors[] = 'Şifre en az 8 karakter olmalı.';
     if (empty($_POST['kvkk'])) $errors[] = 'Aydınlatma metnini ve topluluk kurallarını onaylayın.';
@@ -30,21 +44,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $u = [
       'id' => 'u' . new_id(5), 'username' => unique_username($old['name']), 'name' => $old['name'], 'email' => mb_strtolower($old['email']),
       'phone' => $old['phone'], 'hash' => password_hash($pass, PASSWORD_DEFAULT), 'bio' => '', 'city' => '', 'avatar' => '', 'instagram' => '',
-      'show_events' => true, 'status' => 'aktif', 'created' => date('Y-m-d H:i'), 'last_login' => '', 'tokens' => [],
+      'show_events' => true, 'status' => 'aktif', 'created' => date('Y-m-d H:i'), 'last_login' => '', 'tokens' => [], 'verified' => false,
     ];
     $ok = json_update(USERS_FILE, function (array &$d) use ($u) {
       $d['users'] ??= [];
-      foreach ($d['users'] as $x) if (mb_strtolower($x['email']) === $u['email']) return false;
-      $d['users'][] = $u;
+      // Doğrulanmamış eski kayıt (aynı e-posta ya da süresi geçmiş) yenisine yer açar: adresin sahibi her zaman üye olabilir
+      $keep = [];
+      foreach ($d['users'] as $x) {
+        if (!user_verified($x) && (mb_strtolower($x['email']) === $u['email'] || ($x['verify']['exp'] ?? 0) < time() - 7 * 86400)) continue;
+        if (mb_strtolower($x['email']) === $u['email']) return false;
+        $keep[] = $x;
+      }
+      $keep[] = $u;
+      $d['users'] = $keep;
       return true;
     }, ['users' => []]);
     if (!$ok) $errors[] = 'Bu e-posta ile zaten bir üyelik var.';
     else {
-      user_login($u, true);
-      send_mail($u['email'], $c['brand']['name'] . ' topluluğuna hoş geldiniz', "Merhaba " . $u['name'] . ",\n\nÜyeliğiniz oluşturuldu. Artık etkinliklere birkaç adımda katılabilir, yorum yazabilir ve katılmayı düşündüğünüz etkinlikleri işaretleyebilirsiniz.\n\nProfiliniz: " . site_url(user_url($u)) . "\nYaklaşan etkinlikler: " . site_url('/etkinlikler/'));
-      member_flash('Hoş geldiniz ' . explode(' ', $u['name'])[0] . '! Üyeliğiniz oluşturuldu.');
-      header('Location: ' . ($donus === '/hesabim/' ? '/hesabim/?s=profil&yeni=1' : $donus), true, 303);
-      exit;
+      send_verify_mail($u, $donus);
+      $pending = $u['email'];
     }
   }
 }
@@ -63,7 +81,16 @@ include __DIR__ . '/inc/header.php';
         <li><?= icon('tik') ?>Katıldığınız etkinlikler profilinizde birikir</li>
       </ul>
     </div>
+    <?php if ($pending !== ''): ?>
+    <div class="auth__box">
+      <p class="label">Son bir adım</p>
+      <h2 class="h2">E-postanızı doğrulayın</h2>
+      <p class="notice notice--ok"><b><?= e($pending) ?></b> adresine bir doğrulama bağlantısı gönderdik. Üyeliğiniz bağlantıyı açtığınızda başlar. Gelen kutunuzu (ve gereksiz klasörünü) kontrol edin.</p>
+      <p class="muted small">Bağlantı <?= VERIFY_HOURS ?> saat geçerli. E-posta gelmediyse <a href="/giris/">giriş yapmayı</a> deneyin, yeni bir bağlantı gönderilir.</p>
+    </div>
+    <?php else: ?>
     <form class="auth__box" method="post" data-guard-form novalidate>
+      <?php if ($verifyErr): ?><p class="notice notice--err" role="alert">Doğrulama bağlantısı geçersiz ya da süresi dolmuş. Giriş yapmayı deneyin, size yeni bir bağlantı gönderilir; ya da aşağıdan yeniden üye olun.</p><?php endif; ?>
       <?php if ($errors): ?><div class="notice notice--err" role="alert"><?php foreach ($errors as $er): ?><p><?= $er ?></p><?php endforeach; ?></div><?php endif; ?>
       <input type="hidden" name="csrf" value="<?= e(member_csrf()) ?>"><input type="hidden" name="donus" value="<?= e($donus) ?>">
       <?= guard_fields('uye-ol') ?>
@@ -76,5 +103,6 @@ include __DIR__ . '/inc/header.php';
       <p class="cform__msg" role="status" data-form-msg></p>
       <p class="auth__alt">Zaten üye misiniz? <a href="/giris/?donus=<?= e(rawurlencode($donus)) ?>">Giriş yapın</a></p>
     </form>
+    <?php endif; ?>
   </section>
 <?php include __DIR__ . '/inc/footer.php'; ?>

@@ -49,7 +49,46 @@ function user_url(array $u): string {
 }
 
 function user_public(array $u): bool {
-  return ($u['status'] ?? 'aktif') === 'aktif';
+  return ($u['status'] ?? 'aktif') === 'aktif' && user_verified($u);
+}
+
+// ---------- E-posta doğrulaması ----------
+// Yeni üyelik, e-postaya gönderilen bağlantı açılana kadar kullanılamaz (başkasının adresiyle üye olunamasın).
+// Bu alanı olmayan, doğrulama eklenmeden önce açılmış üyelikler doğrulanmış sayılır.
+const VERIFY_HOURS = 48;
+
+function user_verified(array $u): bool {
+  return ($u['verified'] ?? true) !== false;
+}
+
+// Yeni doğrulama bağlantısı üretip üyeye gönderir. Aynı adrese saatte en fazla 3 kez; sınır dolduysa false.
+function send_verify_mail(array $u, string $donus = '/hesabim/'): bool {
+  if (!rate_hit('dogrula:' . substr(hash('sha256', mb_strtolower($u['email'])), 0, 16), 3)) return false;
+  $tok = bin2hex(random_bytes(24));
+  json_update(USERS_FILE, function (array &$d) use ($u, $tok, $donus) {
+    foreach ($d['users'] as &$x) if ($x['id'] === $u['id']) $x['verify'] = ['h' => hash('sha256', $tok), 'exp' => time() + VERIFY_HOURS * 3600, 'donus' => $donus];
+  }, ['users' => []]);
+  $brand = content()['brand']['name'] ?? '';
+  send_mail($u['email'], 'E-posta adresinizi doğrulayın', "Merhaba " . $u['name'] . ",\n\n" . $brand . " üyeliğinizi tamamlamak için aşağıdaki bağlantıyı " . VERIFY_HOURS . " saat içinde açın:\n" . site_url('/uye-ol/?t=' . $tok) . "\n\nBu üyeliği siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz; doğrulanmayan üyelik kullanılamaz ve bir süre sonra silinir.");
+  return true;
+}
+
+// Bağlantıdaki anahtar geçerliyse üyeliği doğrular; [üye, dönüş adresi] ya da null döner.
+function verify_user_token(string $tok): ?array {
+  if ($tok === '') return null;
+  $h = hash('sha256', $tok);
+  $res = null;
+  json_update(USERS_FILE, function (array &$d) use ($h, &$res) {
+    foreach ($d['users'] as &$x) {
+      $v = $x['verify'] ?? null;
+      if (!is_array($v) || ($v['exp'] ?? 0) <= time() || !hash_equals((string) ($v['h'] ?? ''), $h)) continue;
+      $x['verified'] = true;
+      unset($x['verify']);
+      $res = [$x, safe_return((string) ($v['donus'] ?? '/hesabim/'))];
+      return;
+    }
+  }, ['users' => []]);
+  return $res;
 }
 
 // ---------- Oturum ----------
@@ -73,7 +112,7 @@ function current_user(): ?array {
   $u = user_by_id($id);
   // Şifre değişince diğer cihazlardaki açık oturumlar kapanır
   $pw = $u ? pw_mark($u) : '';
-  if (!$u || ($u['status'] ?? 'aktif') !== 'aktif' || (isset($_SESSION['pw']) && !hash_equals($pw, (string) $_SESSION['pw']))) {
+  if (!$u || ($u['status'] ?? 'aktif') !== 'aktif' || !user_verified($u) || (isset($_SESSION['pw']) && !hash_equals($pw, (string) $_SESSION['pw']))) {
     unset($_SESSION['uid'], $_SESSION['pw']);
     return null;
   }

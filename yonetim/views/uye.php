@@ -15,6 +15,7 @@ $active = ($u['status'] ?? 'aktif') === 'aktif';
   <div class="bar__act"><?php if ($active): ?><a class="btn btn--ghost" href="<?= e(user_url($u)) ?>" target="_blank" rel="noopener">Profili gör ↗</a><?php endif; ?></div>
 </div>
 <?php if (!$active): ?><p class="flash flash--err">Bu üyelik askıya alındı: giriş yapamaz, profili ve yorumları sitede görünmez.</p><?php endif; ?>
+<?php if (!user_verified($u)): ?><div class="flash flash--err"><p>Bu üye e-posta adresini henüz doğrulamadı: giriş yapamaz, profili görünmez. Doğrulanmayan üyelik bir hafta sonra yeni bir üyelikte kendiliğinden silinir.</p><form method="post"><?= hidden($tok, 'uye-dogrula', ['id' => $u['id']]) ?><button class="btn btn--ghost">E-postayı doğrulanmış say</button></form></div><?php endif; ?>
 <div class="grid2 grid2--top grid2--wide">
   <div>
     <section class="card">

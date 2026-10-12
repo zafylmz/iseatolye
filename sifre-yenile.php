@@ -13,7 +13,7 @@ if ($valid && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   elseif (mb_strlen($p1) < 8) $err = 'Şifre en az 8 karakter olmalı.';
   elseif ($p1 !== $p2) $err = 'Şifreler aynı değil.';
   else {
-    json_update(USERS_FILE, function (array &$d) use ($entry, $p1) { foreach ($d['users'] as &$u) if ($u['id'] === $entry['user']) { $u['hash'] = password_hash($p1, PASSWORD_DEFAULT); $u['tokens'] = []; } }, ['users' => []]);
+    json_update(USERS_FILE, function (array &$d) use ($entry, $p1) { foreach ($d['users'] as &$u) if ($u['id'] === $entry['user']) { $u['hash'] = password_hash($p1, PASSWORD_DEFAULT); $u['tokens'] = []; $u['verified'] = true; unset($u['verify']); } }, ['users' => []]);
     json_update(RESETS_FILE, function (array &$d) use ($tok) { unset($d[hash('sha256', $tok)]); });
     member_flash('Şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.');
     header('Location: /giris/', true, 303);

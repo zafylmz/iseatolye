@@ -393,6 +393,12 @@ switch ($action) {
     flash($st === 'engelli' ? 'Üyelik askıya alındı. Üye giriş yapamaz, profili ve yorumları görünmez.' : 'Üyelik yeniden açıldı.');
     redirect('./?s=uye&id=' . urlencode($id));
 
+  case 'uye-dogrula':
+    $id = (string) ($_POST['id'] ?? '');
+    json_update(USERS_FILE, function (array &$d) use ($id) { foreach ($d['users'] as &$u) if ($u['id'] === $id) { $u['verified'] = true; unset($u['verify']); } }, ['users' => []]);
+    flash('Üyenin e-postası doğrulanmış sayıldı. Üye artık giriş yapabilir.');
+    redirect('./?s=uye&id=' . urlencode($id));
+
   case 'uye-sil':
     $id = (string) ($_POST['id'] ?? '');
     $u = user_by_id($id);
@@ -941,6 +947,7 @@ switch ($action) {
     if ($p1 !== (string) ($_POST['p2'] ?? '')) throw new RuntimeException('Yeni şifreler aynı değil.');
     save_password($p1);
     session_regenerate_id(true);
+    panel_device_set((string) $_SESSION['pv']);
     flash('Şifreniz değiştirildi. Diğer cihazlardaki açık oturumlar kapatıldı.');
     redirect('./?s=sifre');
 }
