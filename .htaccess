@@ -13,7 +13,6 @@ RewriteRule ^ https://www.%1%{REQUEST_URI} [L,R=301]
 # Eski WordPress adresleri
 RewriteRule ^etn/([a-z0-9-]+?)(-\d+)?/?$ /etkinlik/$1/ [L,R=301]
 RewriteRule ^etkinlik-takvimi/?$ /takvim/ [L,R=301]
-RewriteRule ^magaza/?$ /etkinlikler/ [L,R=301]
 
 # Temiz adresler
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
@@ -22,6 +21,10 @@ RewriteRule ^etkinlik/([a-z0-9-]+)/?$ etkinlik.php?slug=$1 [L,QSA]
 RewriteRule ^etkinlik/([a-z0-9-]+)/katil/?$ katil.php?slug=$1 [L,QSA]
 RewriteRule ^etkinlik/([a-z0-9-]+)/takvim\.ics$ ics.php?slug=$1 [L,QSA]
 RewriteRule ^bilet/([A-Za-z0-9-]+)/?$ bilet.php?kod=$1 [L,QSA]
+RewriteRule ^magaza/?$ magaza.php [L,QSA]
+RewriteRule ^magaza/([a-z0-9-]+)/?$ magaza.php?slug=$1 [L,QSA]
+RewriteRule ^magaza/([a-z0-9-]+)/siparis/?$ magaza-siparis.php?slug=$1 [L,QSA]
+RewriteRule ^siparis/([A-Za-z0-9-]+)/?$ siparis.php?kod=$1 [L,QSA]
 RewriteRule ^takvim/?$ takvim.php [L,QSA]
 RewriteRule ^galeri/?$ galeri.php [L,QSA]
 RewriteRule ^galeri/([a-z0-9-]+)/?$ galeri.php?slug=$1 [L,QSA]

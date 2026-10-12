@@ -774,6 +774,130 @@ switch ($action) {
     flash('Albüm silindi. İçindeki görseller galeride duruyor.');
     redirect('./?s=galeri');
 
+  // ---------- Mağaza ----------
+  case 'urun':
+    $id = (string) ($_POST['id'] ?? '');
+    $name = mb_substr(post('name'), 0, 120);
+    if ($name === '') throw new RuntimeException('Ürün adı boş olamaz.');
+    $price = price_input(post('price'));
+    if (post('status') === 'yayinda' && $price <= 0) throw new RuntimeException('Satıştaki bir ürünün fiyatı olmalı. Fiyatı yazın ya da taslak olarak kaydedin.');
+    $saved = json_update(SHOP_FILE, function (array &$d) use ($id, $name, $price) {
+      $d += SHOP_DEFAULT;
+      $i = $id === '' ? false : array_search($id, array_column($d['products'], 'id'), true);
+      $p = $i === false ? ['id' => 'p' . substr(bin2hex(random_bytes(4)), 0, 7), 'slug' => '', 'photos' => [], 'created' => date('Y-m-d H:i')] : $d['products'][$i];
+      $p['name'] = $name;
+      $p['status'] = array_key_exists(post('status'), PRODUCT_STATUS) ? post('status') : 'taslak';
+      $p['price'] = $price;
+      $p['stock'] = post_int('stock', 0, 100000);
+      $p['max_per_order'] = post_int('max_per_order', 0, 1000);
+      $p['summary'] = mb_substr(post('summary'), 0, 300);
+      $p['body'] = mb_substr(post('body'), 0, 20000);
+      $p['sort'] = (int) ($_POST['sort'] ?? 0);
+      $p['no_return'] = !empty($_POST['no_return']);
+      $p['photos'] = gallery_pick('photos', $p['photos'] ?? []);
+      $want = slugify(post('slug') ?: $name, 'urun');
+      $taken = array_column(array_filter($d['products'], fn($x) => $x['id'] !== $p['id']), 'slug');
+      $new = $want; $n = 2;
+      while (in_array($new, $taken, true)) $new = $want . '-' . $n++;
+      $p['slug'] = $new;
+      $p['updated'] = date('Y-m-d H:i');
+      if ($i === false) $d['products'][] = $p; else $d['products'][$i] = $p;
+      return $p;
+    }, SHOP_DEFAULT);
+    $warn = $saved['status'] === 'yayinda' && !$saved['photos'] ? ' Ürüne görsel eklemeniz önerilir.' : '';
+    flash('"' . $saved['name'] . '" kaydedildi (' . ($saved['status'] === 'yayinda' ? 'satışta' : 'taslak') . ', stok ' . $saved['stock'] . ' adet).' . $warn);
+    redirect('./?s=urun&id=' . urlencode($saved['id']));
+
+  case 'urun-stok':
+    $id = (string) ($_POST['id'] ?? '');
+    $stock = post_int('stock', 0, 100000);
+    $name = json_update(SHOP_FILE, function (array &$d) use ($id, $stock) {
+      $d += SHOP_DEFAULT;
+      foreach ($d['products'] as &$p) if ($p['id'] === $id) { $p['stock'] = $stock; $p['updated'] = date('Y-m-d H:i'); return $p['name']; }
+      return null;
+    }, SHOP_DEFAULT);
+    if ($name === null) throw new RuntimeException('Ürün bulunamadı.');
+    flash('"' . $name . '" stoğu ' . $stock . ' adet olarak güncellendi.');
+    redirect($back ?: './?s=urunler');
+
+  case 'urun-sil':
+    $id = (string) ($_POST['id'] ?? '');
+    $p = product_by_id($id);
+    if (!$p) throw new RuntimeException('Ürün bulunamadı.');
+    backup_file(SHOP_FILE);
+    json_update(SHOP_FILE, function (array &$d) use ($id) { $d += SHOP_DEFAULT; $d['products'] = array_values(array_filter($d['products'], fn($x) => $x['id'] !== $id)); }, SHOP_DEFAULT);
+    flash('"' . $p['name'] . '" silindi. Bu ürünün eski siparişleri Siparişler bölümünde kalır.');
+    redirect('./?s=urunler');
+
+  case 'magaza-ayar':
+    $set = [
+      'intro' => mb_substr(post('intro'), 0, 300),
+      'ship' => !empty($_POST['ship']),
+      'shipping_fee' => price_input(post('shipping_fee')),
+      'free_over' => price_input(post('free_over')),
+      'ship_days' => mb_substr(post('ship_days'), 0, 80),
+      'pickup' => !empty($_POST['pickup']),
+      'pickup_note' => mb_substr(post('pickup_note'), 0, 160),
+    ];
+    if (!$set['ship'] && !$set['pickup']) throw new RuntimeException('En az bir teslimat şekli (kargo ya da atölyeden teslim) açık olmalı.');
+    json_update(SHOP_FILE, function (array &$d) use ($set) { $d += SHOP_DEFAULT; $d['settings'] = $set + (array) $d['settings']; }, SHOP_DEFAULT);
+    flash('Mağaza ayarları kaydedildi.');
+    redirect('./?s=urunler#ayarlar');
+
+  case 'siparis':
+    $id = (string) ($_POST['id'] ?? '');
+    $notify = !empty($_POST['notify']);
+    $res = order_update($id, function (array &$o) {
+      $st = post('status');
+      if (array_key_exists($st, ORDER_STATUS)) $o['status'] = $st;
+      $o['paid'] = !empty($_POST['paid']);
+      // Ödemesi alınan sipariş "ödeme bekleniyor" durumunda kalmaz
+      if ($o['paid'] && $o['status'] === 'beklemede') $o['status'] = 'hazirlaniyor';
+      $o['cargo'] = mb_substr(post('cargo'), 0, 200);
+      $o['admin_note'] = mb_substr(post('admin_note'), 0, 1000);
+      foreach (['name' => 80, 'phone' => 30] as $k => $max) if (isset($_POST[$k])) $o[$k] = mb_substr(post($k), 0, $max);
+      if (isset($_POST['address'])) $o['address'] = mb_substr(post('address'), 0, 500);
+      if (isset($_POST['email']) && ($o['user'] ?? '') === '' && filter_var(post('email'), FILTER_VALIDATE_EMAIL)) $o['email'] = post('email');
+      $o['inv_no'] = mb_substr(trim(post('inv_no')), 0, 40);
+      $o['inv_date'] = $o['inv_no'] === '' ? '' : (preg_match('/^\d{4}-\d{2}-\d{2}$/', post('inv_date')) ? post('inv_date') : date('Y-m-d'));
+      $inv = [];
+      foreach (['title' => 160, 'tax_office' => 60, 'tax_no' => 11, 'address' => 300] as $k => $max) $inv[$k] = mb_substr(trim(post('inv_' . $k)), 0, $max);
+      $o['invoice'] = $inv['title'] !== '' ? ['type' => 'kurumsal'] + $inv : (implode('', $inv) !== '' ? ['type' => 'bireysel', 'tax_no' => $inv['tax_no'], 'address' => $inv['address']] : []);
+    });
+    if (!$res) throw new RuntimeException('Sipariş bulunamadı.');
+    [$before, $o] = $res;
+    if ($notify && $o['email'] !== '') {
+      if (empty($before['paid']) && !empty($o['paid'])) mail_order_update($o, 'odeme');
+      elseif ($before['status'] !== $o['status'] && in_array($o['status'], ['hazirlaniyor', 'kargoda', 'teslim', 'iptal'], true)) mail_order_update($o, $o['status']);
+    }
+    flash($o['code'] . ' siparişi güncellendi.' . ($o['status'] === 'iptal' && !empty($before['stock_taken']) ? ' Ürün stoğa geri eklendi.' : '') . ($notify && is_local() ? ' (Yerel ortamda e-posta gönderilmez.)' : ''));
+    redirect($back ?: './?s=siparis&id=' . urlencode($id));
+
+  // Listeden tek dokunuşla: ödendi, kargoya verildi, teslim edildi, iptal
+  case 'siparis-hizli':
+    $id = (string) ($_POST['id'] ?? ''); $do = post('do');
+    if (!in_array($do, ['odendi', 'hazirlaniyor', 'kargoda', 'teslim', 'iptal'], true)) throw new RuntimeException('Geçersiz işlem.');
+    $res = order_update($id, function (array &$o) use ($do) {
+      if ($do === 'odendi') { $o['paid'] = true; if ($o['status'] === 'beklemede') $o['status'] = 'hazirlaniyor'; }
+      else $o['status'] = $do;
+    });
+    if (!$res) throw new RuntimeException('Sipariş bulunamadı.');
+    [$before, $o] = $res;
+    if (!empty($_POST['notify']) && $o['email'] !== '' && ($do === 'odendi' ? empty($before['paid']) : $before['status'] !== $o['status'])) mail_order_update($o, $do === 'odendi' ? 'odeme' : $do);
+    flash($o['code'] . ': ' . ['odendi' => 'ödeme alındı', 'hazirlaniyor' => 'hazırlanıyor', 'kargoda' => 'kargoya verildi', 'teslim' => 'teslim edildi', 'iptal' => 'iptal edildi'][$do] . '.');
+    redirect($back ?: './?s=siparisler');
+
+  case 'siparis-sil':
+    $id = (string) ($_POST['id'] ?? '');
+    $o = null; foreach (orders_all() as $x) if ($x['id'] === $id) $o = $x;
+    if (!$o) throw new RuntimeException('Sipariş bulunamadı.');
+    // Stoğu düşülmüş ama teslim edilmemiş sipariş silinirse ürün stoğa geri eklenir
+    if (!empty($o['stock_taken']) && !in_array($o['status'], ['kargoda', 'teslim'], true)) product_stock_add((string) $o['product'], (int) $o['qty']);
+    backup_file(ORDERS_FILE);
+    json_update(ORDERS_FILE, function (array &$d) use ($id) { $d['orders'] = array_values(array_filter($d['orders'] ?? [], fn($x) => $x['id'] !== $id)); }, ['orders' => []]);
+    flash($o['code'] . ' siparişi silindi.');
+    redirect('./?s=siparisler');
+
   // ---------- Veritabanı ----------
   case 'veritabani':
     if (db_config()) throw new RuntimeException('Site zaten veritabanına bağlı.');

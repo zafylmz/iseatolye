@@ -307,6 +307,44 @@
     });
   }
 
+  // ---------- Mağaza: ürün sayfasında adet, sipariş formunda teslimat ve özet ----------
+  $$('form[data-buy], form[data-order]').forEach((form) => {
+    const qty = $('input[type=number]', form);
+    if (!qty) return;
+    const fmt = (n) => n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' ₺';
+    const ship = $('[data-ship]', form);
+    const update = () => {
+      const max = parseInt(qty.max || '1', 10) || 1;
+      let q = parseInt(qty.value || '1', 10);
+      if (!(q >= 1)) q = 1;
+      if (q > max) q = max;
+      if (String(q) !== qty.value) qty.value = q;
+      $$('[data-qty]', form).forEach((b) => { b.disabled = b.dataset.qty === '-1' ? q <= 1 : q >= max; });
+      if (!form.hasAttribute('data-order')) return;
+      const d = (form.querySelector('[data-delivery]:checked') || {}).value || '';
+      if (ship) ship.hidden = d !== 'kargo';
+      const sub = parseFloat(form.dataset.price || '0') * q;
+      const free = parseFloat(form.dataset.free || '0');
+      const fee = d === 'kargo' && !(free > 0 && sub >= free) ? parseFloat(form.dataset.fee || '0') : 0;
+      const set = (sel, v) => { const el = $(sel); if (el) el.textContent = v; };
+      set('[data-sum-qty]', q);
+      set('[data-sum-sub]', fmt(sub));
+      set('[data-sum-ship]', d !== 'kargo' ? '–' : fee > 0 ? fmt(fee) : 'Ücretsiz');
+      set('[data-sum-total]', fmt(sub + fee));
+    };
+    $$('[data-qty]', form).forEach((b) => b.addEventListener('click', () => {
+      qty.value = (parseInt(qty.value || '1', 10) || 1) + parseInt(b.dataset.qty, 10);
+      update();
+    }));
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+    update();
+    if (form.hasAttribute('data-order') && !form.hasAttribute('data-guard-form')) form.addEventListener('submit', () => {
+      const b = $('[data-join-btn]', form);
+      if (b) setTimeout(() => { b.disabled = true; }, 0);
+    });
+  });
+
   // ---------- İletişim formu: kurumsal alanlar ----------
   $$('.cform-contact').forEach((f) => {
     const sync = () => { const t = f.querySelector('[data-topic]:checked'); f.classList.toggle('is-corp', !!t && t.value === 'kurumsal'); };

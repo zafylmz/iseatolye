@@ -10,7 +10,7 @@ $description = $description ?? ($c['brand']['description'] ?? '');
 $image = $image ?? (($c['brand']['og_image'] ?? '') ?: '/og.jpg');
 $path = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
 // Tek bir kanonik adres: küçük harf, sonda eğik çizgi (aynı sayfanın /Etkinlikler, /etkinlikler gibi kopyaları tek adreste birleşir)
-$canonPhp = ['index' => '/', 'etkinlikler' => '/etkinlikler/', 'takvim' => '/takvim/', 'galeri' => '/galeri/', 'mekanlar' => '/mekanlar/', 'blog' => '/blog/', 'kurumsal' => '/kurumsal/', 'hakkimizda' => '/hakkimizda/', 'iletisim' => '/iletisim/', 'gizlilik' => '/gizlilik/', 'katilim-kosullari' => '/katilim-kosullari/', 'mesafeli-satis' => '/mesafeli-satis/'];
+$canonPhp = ['index' => '/', 'etkinlikler' => '/etkinlikler/', 'takvim' => '/takvim/', 'galeri' => '/galeri/', 'mekanlar' => '/mekanlar/', 'blog' => '/blog/', 'kurumsal' => '/kurumsal/', 'hakkimizda' => '/hakkimizda/', 'iletisim' => '/iletisim/', 'gizlilik' => '/gizlilik/', 'katilim-kosullari' => '/katilim-kosullari/', 'mesafeli-satis' => '/mesafeli-satis/', 'magaza' => '/magaza/'];
 $canon = $canonical ?? (str_ends_with($path, '.php') ? ($canonPhp[basename(strtolower($path), '.php')] ?? strtolower($path)) : rtrim(strtolower($path), '/') . '/');
 $canonUrl = site_url($canon);
 $me = current_user();
@@ -18,6 +18,7 @@ $nav = [
   '/etkinlikler/' => 'Etkinlikler',
   '/takvim/' => 'Takvim',
   '/galeri/' => 'Galeri',
+  '/magaza/' => 'Mağaza',
   '/kurumsal/' => 'Kurumsal',
   '/hakkimizda/' => 'Hakkımızda',
   '/mekanlar/' => 'Mekanlar',
@@ -25,7 +26,7 @@ $nav = [
   '/iletisim/' => 'İletişim',
 ];
 if (!data_exists(DATA . '/blog.json') || !array_filter(json_read(DATA . '/blog.json')['posts'] ?? [], fn($p) => !empty($p['published']))) unset($nav['/blog/']);
-// Üst menü sade kalsın: ilk dört bağlantı görünür, diğerleri "Hakkımızda" açılır listesinde (telefonda ikinci grup)
+// Üst menü sade kalsın: ilk beş bağlantı görünür, diğerleri "Hakkımızda" açılır listesinde (telefonda ikinci grup)
 $navMore = array_intersect_key([
   '/hakkimizda/' => 'Biz kimiz, nasıl çalışıyoruz',
   '/mekanlar/' => 'Atölyelerin yapıldığı yerler',

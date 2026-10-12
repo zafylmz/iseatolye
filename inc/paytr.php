@@ -21,14 +21,14 @@ function paytr_config(): ?array {
 
 function paytr_on(): bool { return paytr_config() !== null; }
 
-// Katılım kodu "ISE-ABC123" PayTR sipariş numarasında "ISEABC123X1760000000" olur.
+// Katılım kodu "ISE-ABC123" (mağaza siparişinde "MGZ-ABC123") PayTR sipariş numarasında "ISEABC123X1760000000" olur.
 // Sipariş numarası yalnızca harf ve rakam içerebilir ve her denemede farklı olmalıdır.
 function paytr_oid(array $r): string {
   return preg_replace('/[^A-Z0-9]/', '', strtoupper((string) $r['code'])) . 'X' . time() . random_int(10, 99);
 }
 
 function paytr_code_of_oid(string $oid): string {
-  return preg_match('/^ISE([A-Z0-9]{6})X\d+$/', $oid, $m) ? 'ISE-' . $m[1] : '';
+  return preg_match('/^(ISE|MGZ)([A-Z0-9]{6})X\d+$/', $oid, $m) ? $m[1] . '-' . $m[2] : '';
 }
 
 function paytr_kurus(float $v): int { return (int) round($v * 100); }

@@ -88,10 +88,10 @@ function https(): bool {
 
 // ---------- Veritabanı (MySQL) ----------
 // Panel > Sistem kontrolü'nden bağlanınca sitenin bütün verileri (içerik, etkinlikler, blog, medya, üyeler, katılımlar,
-// yorumlar, ilgilenenler, mesajlar) MySQL'de tutulur. Bağlantı bilgisi data/db.php dosyasındadır.
+// yorumlar, ilgilenenler, mesajlar, mağaza ürünleri ve siparişler) MySQL'de tutulur. Bağlantı bilgisi data/db.php dosyasındadır.
 // Bağlı değilse aynı veriler data/ altındaki dosyalardadır. Şifreler ve anahtarlar her zaman data/ altındaki PHP dosyalarında kalır.
 const DB_FILE = DATA . '/db.php';
-const DB_DOCS = ['content', 'events', 'blog', 'medya', 'users', 'registrations', 'comments', 'interests', 'messages', 'blog-comments', 'blog-likes', 'resets'];
+const DB_DOCS = ['content', 'events', 'blog', 'medya', 'users', 'registrations', 'comments', 'interests', 'messages', 'blog-comments', 'blog-likes', 'resets', 'magaza', 'siparisler'];
 
 function db_config(): ?array {
   static $c = false;

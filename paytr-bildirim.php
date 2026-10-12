@@ -12,7 +12,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$cfg) { http_response_code(404); e
 $p = $_POST;
 if (!paytr_verify($cfg, $p)) { error_log('PayTR bildirimi: imza hatalı (' . substr((string) ($p['merchant_oid'] ?? ''), 0, 40) . ')'); http_response_code(400); echo 'PAYTR notification failed: bad hash'; exit; }
 $oid = (string) $p['merchant_oid'];
-$r = reg_by_code(paytr_code_of_oid($oid));
+$code = paytr_code_of_oid($oid);
+// Mağaza siparişi
+if (str_starts_with($code, 'MGZ-')) {
+  require_once __DIR__ . '/inc/shop.php';
+  shop_paytr_notify($cfg, $p, $oid, $code);
+  echo 'OK'; exit;
+}
+$r = reg_by_code($code);
 if (!$r) { error_log('PayTR bildirimi: kayıt bulunamadı (' . $oid . ')'); echo 'OK'; exit; }
 if (($p['status'] ?? '') !== 'success') {
   error_log('PayTR ödeme başarısız (' . $r['code'] . '): ' . ($p['failed_reason_code'] ?? '') . ' ' . ($p['failed_reason_msg'] ?? ''));

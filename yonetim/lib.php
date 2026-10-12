@@ -215,6 +215,8 @@ function media_usage(): array {
   }
   foreach ($cat['venues'] ?? [] as $v) $add((string) ($v['photo'] ?? ''), 'Mekan: ' . $v['name'], './?s=mekanlar&duzenle=' . rawurlencode($v['id']) . '#mekanlar');
   foreach ($cat['instructors'] ?? [] as $x) $add((string) ($x['photo'] ?? ''), 'Eğitmen: ' . $x['name'], './?s=mekanlar&duzenle=' . rawurlencode($x['id']) . '#egitmenler');
+  require_once ROOT . '/inc/shop.php';
+  foreach (products_all() as $p) foreach ($p['photos'] ?? [] as $g) $add((string) $g, 'Ürün: ' . $p['name'], './?s=urun&id=' . rawurlencode($p['id']));
   foreach (json_read(BLOG_FILE)['posts'] ?? [] as $p) {
     $u = './?s=yazi&slug=' . rawurlencode($p['slug']);
     $add((string) ($p['cover'] ?? ''), 'Blog kapağı: ' . $p['title'], $u);

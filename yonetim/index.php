@@ -5,6 +5,7 @@ require __DIR__ . '/lib.php';
 require_once ROOT . '/inc/blog.php';
 require_once ROOT . '/inc/stats.php';
 require_once ROOT . '/inc/geo.php';
+require_once ROOT . '/inc/shop.php';
 
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
@@ -71,7 +72,7 @@ if (logged_in() && $action !== '') {
     require __DIR__ . '/actions.php';
   } catch (RuntimeException $ex) {
     flash($ex->getMessage(), 'err');
-    $_SESSION['old_post'] = $action === 'etkinlik' ? $_POST : null;
+    $_SESSION['old_post'] = in_array($action, ['etkinlik', 'urun'], true) ? $_POST : null;
     redirect('./?' . http_build_query($_GET));
   }
 }
@@ -92,7 +93,7 @@ if (logged_in() && $view === 'galeri' && !empty($_GET['parca'])) {
 }
 
 $f = flash();
-$views = ['pano', 'etkinlikler', 'etkinlik', 'katilimlar', 'kayit', 'mekanlar', 'uyeler', 'uye', 'yorumlar', 'mesajlar', 'blog', 'yazi', 'galeri', 'sayfalar', 'ayarlar', 'istatistik', 'kontrol', 'sifre', 'faturalar'];
+$views = ['pano', 'etkinlikler', 'etkinlik', 'katilimlar', 'kayit', 'mekanlar', 'uyeler', 'uye', 'yorumlar', 'mesajlar', 'blog', 'yazi', 'galeri', 'sayfalar', 'ayarlar', 'istatistik', 'kontrol', 'sifre', 'faturalar', 'urunler', 'urun', 'siparisler', 'siparis'];
 if (!in_array($view, [...$views, 'setup', 'login'], true)) $view = 'pano';
 
 // Rozetler: bekleyen işler
@@ -103,15 +104,19 @@ foreach (json_read(COMMENTS_FILE) as $list) foreach ($list as $cm) if (($cm['sta
 foreach (json_read(BLOG_COMMENTS_FILE) as $list) foreach ($list as $cm) if (($cm['status'] ?? '') !== 'approved') $pendingCm++;
 $unread = count(array_filter(json_read(MESSAGES_FILE, ['messages' => []])['messages'] ?? [], fn($m) => empty($m['read'])));
 $badge = fn(int $n) => $n ? ' <span class="badge">' . $n . '</span>' : '';
+// Mağaza: hazırlanacak (ödemesi alınmış ya da onaylanmış, henüz kargolanmamış) siparişler
+$orders = orders_all();
+$todoOrders = count(array_filter($orders, fn($o) => $o['status'] === 'hazirlaniyor'));
 
 $nav = [
   'Genel' => ['pano' => 'Pano'],
   'Etkinlik' => ['etkinlikler' => 'Etkinlikler', 'katilimlar' => 'Katılımlar' . $badge($pendingRegs), 'faturalar' => 'Faturalar' . $badge(count(array_filter($regs, 'invoice_due'))), 'mekanlar' => 'Mekan ve eğitmenler'],
+  'Mağaza' => ['urunler' => 'Ürünler', 'siparisler' => 'Siparişler' . $badge($todoOrders)],
   'Topluluk' => ['uyeler' => 'Üyeler', 'yorumlar' => 'Yorumlar' . $badge($pendingCm), 'mesajlar' => 'Mesajlar' . $badge($unread)],
   'Site' => ['galeri' => 'Galeri', 'blog' => 'Blog', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre'],
 ];
-$activeTab = ['etkinlik' => 'etkinlikler', 'kayit' => 'katilimlar', 'uye' => 'uyeler', 'yazi' => 'blog'][$view] ?? $view;
-$titles = ['pano' => 'Pano', 'etkinlikler' => 'Etkinlikler', 'etkinlik' => 'Etkinlik', 'katilimlar' => 'Katılımlar', 'kayit' => 'Kayıt', 'mekanlar' => 'Mekan ve eğitmenler', 'uyeler' => 'Üyeler', 'uye' => 'Üye', 'yorumlar' => 'Yorumlar', 'mesajlar' => 'Mesajlar', 'blog' => 'Blog', 'yazi' => 'Yazı', 'galeri' => 'Galeri', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre', 'faturalar' => 'Faturalar', 'setup' => 'Kurulum', 'login' => 'Giriş'];
+$activeTab = ['etkinlik' => 'etkinlikler', 'kayit' => 'katilimlar', 'uye' => 'uyeler', 'yazi' => 'blog', 'urun' => 'urunler', 'siparis' => 'siparisler'][$view] ?? $view;
+$titles = ['pano' => 'Pano', 'etkinlikler' => 'Etkinlikler', 'etkinlik' => 'Etkinlik', 'katilimlar' => 'Katılımlar', 'kayit' => 'Kayıt', 'mekanlar' => 'Mekan ve eğitmenler', 'uyeler' => 'Üyeler', 'uye' => 'Üye', 'yorumlar' => 'Yorumlar', 'mesajlar' => 'Mesajlar', 'blog' => 'Blog', 'yazi' => 'Yazı', 'galeri' => 'Galeri', 'sayfalar' => 'Sayfalar', 'ayarlar' => 'Ayarlar', 'istatistik' => 'İstatistikler', 'kontrol' => 'Sistem kontrolü', 'sifre' => 'Şifre', 'faturalar' => 'Faturalar', 'urunler' => 'Ürünler', 'urun' => 'Ürün', 'siparisler' => 'Siparişler', 'siparis' => 'Sipariş', 'setup' => 'Kurulum', 'login' => 'Giriş'];
 ?><!doctype html>
 <html lang="tr">
 <head><meta charset="utf-8">

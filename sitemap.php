@@ -1,11 +1,14 @@
 <?php
-// Etkinlikler, mekanlar ve yazılar eklendikçe kendiliğinden güncellenen site haritası.
+// Etkinlikler, mekanlar, mağaza ürünleri ve yazılar eklendikçe kendiliğinden güncellenen site haritası.
 require __DIR__ . '/inc/bootstrap.php';
 require __DIR__ . '/inc/events.php';
 $urls = [];
 foreach (['/', '/etkinlikler/', '/takvim/', '/mekanlar/', '/kurumsal/', '/hakkimizda/', '/iletisim/', '/katilim-kosullari/', '/gizlilik/', '/mesafeli-satis/'] as $u) $urls[$u] = '';
 foreach (events_all() as $ev) if (event_visible($ev)) $urls[event_url($ev)] = (string) ($ev['updated'] ?? '') ?: (string) ($ev['created'] ?? '');
 foreach (venues() as $v) $urls[venue_url($v)] = '';
+require_once __DIR__ . '/inc/shop.php';
+$urls['/magaza/'] = '';
+foreach (products_public() as $p) $urls[product_url($p)] = (string) ($p['updated'] ?? '') ?: (string) ($p['created'] ?? '');
 require_once __DIR__ . '/inc/media.php';
 $albums = gallery_albums();
 if ($albums) $urls['/galeri/'] = '';
