@@ -393,6 +393,12 @@ switch ($action) {
     flash($st === 'engelli' ? 'Üyelik askıya alındı. Üye giriş yapamaz, profili ve yorumları görünmez.' : 'Üyelik yeniden açıldı.');
     redirect('./?s=uye&id=' . urlencode($id));
 
+  case 'uye-dogrula':
+    $id = (string) ($_POST['id'] ?? '');
+    json_update(USERS_FILE, function (array &$d) use ($id) { foreach ($d['users'] as &$u) if ($u['id'] === $id) { $u['verified'] = true; unset($u['verify']); } }, ['users' => []]);
+    flash('Üyenin e-postası doğrulanmış sayıldı. Üye artık giriş yapabilir.');
+    redirect('./?s=uye&id=' . urlencode($id));
+
   case 'uye-sil':
     $id = (string) ($_POST['id'] ?? '');
     $u = user_by_id($id);
@@ -968,4 +974,5 @@ switch ($action) {
     redirect('./?s=sifre');
 }
 
+    panel_device_set((string) $_SESSION['pv']);
 throw new RuntimeException('Bilinmeyen işlem.');
