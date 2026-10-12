@@ -345,6 +345,24 @@
     });
   });
 
+  // ---------- Kayan galeri (mağaza girişi): oklar, noktalar, kendiliğinden geçiş ----------
+  $$('[data-slider]').forEach((box) => {
+    const track = $('[data-slider-track]', box);
+    const slides = Array.from(track.children);
+    const dots = $$('[data-slider-dots] button', box);
+    if (slides.length < 2) return;
+    const at = () => Math.round(track.scrollLeft / track.clientWidth);
+    const go = (i) => track.scrollTo({ left: ((i + slides.length) % slides.length) * track.clientWidth });
+    $('[data-slider-prev]', box).addEventListener('click', () => { go(at() - 1); stop(); });
+    $('[data-slider-next]', box).addEventListener('click', () => { go(at() + 1); stop(); });
+    dots.forEach((d, i) => d.addEventListener('click', () => { go(i); stop(); }));
+    track.addEventListener('scroll', () => { const i = at(); dots.forEach((d, k) => d.toggleAttribute('aria-current', k === i)); }, { passive: true });
+    let timer = null;
+    const stop = () => { clearInterval(timer); timer = null; };
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => { if (!document.hidden) go(at() + 1); }, 5000);
+    box.addEventListener('pointerdown', stop, { once: true });
+  });
+
   // ---------- İletişim formu: kurumsal alanlar ----------
   $$('.cform-contact').forEach((f) => {
     const sync = () => { const t = f.querySelector('[data-topic]:checked'); f.classList.toggle('is-corp', !!t && t.value === 'kurumsal'); };

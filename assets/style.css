@@ -1060,3 +1060,23 @@ body.has-modal { overflow: hidden; }
 .pcard--out .pcard__media img { filter: saturate(.55); opacity: .85; }
 .product__cover { aspect-ratio: 1; }
 .product__desc { margin-top: 40px; padding-top: 0; border-top: 0; }
+/* Mağaza girişi: metin ve kayan galeri */
+.shop-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 80px); align-items: center; }
+.shop-head--text { grid-template-columns: minmax(0, 760px); }
+.shop-head .lead { margin-top: 18px; }
+.shop-head__about { margin-top: 22px; color: var(--ink-2); }
+.shop-head__about p + p { margin-top: 14px; }
+@media (max-width: 900px) { .shop-head { grid-template-columns: 1fr; } .shop-head .slider { order: -1; aspect-ratio: 4 / 3; } }
+.slider { position: relative; border-radius: var(--r-lg); overflow: hidden; background: var(--sand-2); aspect-ratio: 1; }
+.slider__track { display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
+.slider__track::-webkit-scrollbar { display: none; }
+.slider__slide { flex: 0 0 100%; height: 100%; padding: 0; border: 0; background: none; scroll-snap-align: start; cursor: zoom-in; }
+.slider__slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slider__nav { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--paper); color: var(--ink); opacity: .92; transition: color .2s linear; }
+.slider__nav:hover { color: var(--accent); }
+.slider__nav--prev { left: 14px; }
+.slider__nav--next { right: 14px; }
+.slider__dots { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; gap: 8px; }
+.slider__dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: var(--paper); opacity: .55; transition: opacity .2s linear; }
+.slider__dots button[aria-current] { opacity: 1; }
+@media (max-width: 560px) { .slider__nav { display: none; } }

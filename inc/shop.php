@@ -34,6 +34,30 @@ function shop_setting(string $k, $default = null) {
   return array_key_exists($k, $s) ? $s[$k] : $default;
 }
 
+// Mağaza sayfasının giriş metni (panelden değiştirilebilir; boşsa bu metin görünür)
+const SHOP_TITLE = 'İSE ATÖLYE Lokal Mağaza';
+const SHOP_TAGLINE = 'Atölyelerimizden hayatınıza uzanan özgün tasarımlar.';
+const SHOP_ABOUT = "İse Atölye Lokal Mağaza, eğitmenlerimizin, sanatçılarımızın ve üreticilerimizin kendi elleriyle hazırladığı özgün ürünleri keşfedebileceğiniz özel bir alan. Her biri kendi hikâyesini, emeğini ve yaratıcılığını taşıyan bu ürünleri yalnızca atölyelerimizde deneyimlemekle kalmayıp günlük yaşamınızın bir parçası hâline de getirebilirsiniz.\n\nEl emeği tasarımlardan sanatsal objelere, özgün aksesuarlardan özel üretim parçalara uzanan seçkimizle, yerel üretimi destekliyor ve üreticilerimizle aranızda yeni bir bağ kuruyoruz.\n\nKeşfedin, beğenin, üreticilerimizi destekleyin. Çünkü her ürün, arkasında bir emek, bir fikir.";
+
+function shop_text(string $k): string {
+  $v = trim((string) shop_setting($k, ''));
+  if ($v !== '') return $v;
+  return ['title' => SHOP_TITLE, 'tagline' => trim((string) shop_setting('intro', '')) ?: SHOP_TAGLINE, 'about' => SHOP_ABOUT][$k] ?? '';
+}
+
+// Giriş metninin yanındaki kayan galeri: panelde seçilen görseller; seçilmediyse ürün ve galeri fotoğrafları
+function shop_slides(): array {
+  $list = array_values(array_filter((array) shop_setting('slides', []), fn($p) => is_string($p) && is_file(ROOT . $p)));
+  if ($list) return $list;
+  foreach (products_public() as $p) foreach ($p['photos'] ?? [] as $g) if (is_file(ROOT . $g)) $list[] = $g;
+  if (count($list) < 3) {
+    require_once __DIR__ . '/media.php';
+    require_once __DIR__ . '/events.php';
+    foreach (gallery_albums() as $a) foreach ($a['images'] as $g) $list[] = $g;
+  }
+  return array_slice(array_values(array_unique($list)), 0, 8);
+}
+
 function products_all(): array { return shop()['products']; }
 
 function product_by_id(?string $id): ?array {

@@ -831,7 +831,10 @@ switch ($action) {
 
   case 'magaza-ayar':
     $set = [
-      'intro' => mb_substr(post('intro'), 0, 300),
+      'title' => mb_substr(post('title'), 0, 80),
+      'tagline' => mb_substr(post('tagline'), 0, 200),
+      'about' => mb_substr(post('about'), 0, 3000),
+      'slides' => gallery_pick('slides', (array) shop_setting('slides', [])),
       'ship' => !empty($_POST['ship']),
       'shipping_fee' => price_input(post('shipping_fee')),
       'free_over' => price_input(post('free_over')),

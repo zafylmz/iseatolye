@@ -33,7 +33,12 @@ $st = shop()['settings'] ?? [];
 <form method="post" class="card" id="ayarlar">
   <?= hidden($tok, 'magaza-ayar') ?>
   <h2>Mağaza ayarları</h2>
-  <label>Mağaza sayfasının giriş yazısı<input name="intro" value="<?= e($st['intro'] ?? '') ?>" maxlength="300" placeholder="Atölyelerimizden çıkan, el emeğiyle hazırlanan ürünler."></label>
+  <p class="sub">Mağaza sayfasının girişi</p>
+  <label>Başlık<input name="title" value="<?= e(shop_text('title')) ?>" maxlength="80"></label>
+  <label>Alt başlık<input name="tagline" value="<?= e(shop_text('tagline')) ?>" maxlength="200"></label>
+  <label>Tanıtım yazısı <span class="opt">(paragrafları boş satırla ayırın)</span><textarea name="about" rows="7" maxlength="3000"><?= e(shop_text('about')) ?></textarea></label>
+  <p class="sub">Yazının yanındaki kayan galeri <span class="opt">(boşsa ürün ve galeri fotoğrafları gösterilir; sürükleyerek sıralayabilirsiniz)</span></p>
+  <?= image_field('slides', $st['slides'] ?? [], ['multi' => true, 'hint' => 'Kare ya da dikey fotoğraflar en iyi sonucu verir.']) ?>
   <p class="sub">Teslimat</p>
   <div class="checks checks--col">
     <label class="check"><input type="checkbox" name="ship" value="1"<?= ($st['ship'] ?? true) ? ' checked' : '' ?>> Kargo ile gönderim</label>

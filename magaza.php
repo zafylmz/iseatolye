@@ -6,7 +6,7 @@ require_once __DIR__ . '/inc/icons.php';
 require_once __DIR__ . '/inc/media.php';
 $c = content();
 $slug = (string) ($_GET['slug'] ?? '');
-$intro = trim((string) shop_setting('intro', '')) ?: 'Atölyelerimizden çıkan, el emeğiyle hazırlanan ürünler.';
+$intro = shop_text('tagline');
 
 // Ürün kartında ve sayfasında stok yazısı
 $stockLabel = function (array $p): string {
@@ -17,16 +17,33 @@ $stockLabel = function (array $p): string {
 
 if ($slug === '') {
   $list = products_public();
-  $title = 'Mağaza · ' . $c['brand']['name'];
-  $description = $intro;
+  $slides = shop_slides();
+  $title = shop_text('title') . ' · ' . $c['brand']['name'];
+  $description = $intro . ' ' . excerpt(shop_text('about'), 120);
+  if ($slides) $image = $slides[0];
   $canonical = '/magaza/';
   $headExtra = '<script type="application/ld+json">' . json_encode(breadcrumb_ld(['Mağaza' => '/magaza/']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>';
   include __DIR__ . '/inc/header.php';
   ?>
-  <section class="wrap page-head">
-    <p class="label">Mağaza</p>
-    <h1 class="display display--md">Mağaza</h1>
-    <p class="lead"><?= e($intro) ?></p>
+  <section class="wrap page-head shop-head<?= $slides ? '' : ' shop-head--text' ?>">
+    <div class="shop-head__text">
+      <p class="label">Mağaza</p>
+      <h1 class="display display--md"><?= e(shop_text('title')) ?></h1>
+      <p class="lead"><?= e($intro) ?></p>
+      <div class="prose shop-head__about"><?= paragraphs(shop_text('about')) ?></div>
+    </div>
+    <?php if ($slides): $gm = media_meta()['items']; ?>
+      <div class="slider" data-slider aria-roledescription="carousel" aria-label="Mağazadan kareler">
+        <div class="slider__track" data-slider-track data-zoom-group>
+          <?php foreach ($slides as $i => $s): ?><button type="button" class="slider__slide" data-zoom-src="<?= e($s) ?>" data-zoom-cap="<?= e($gm[$s]['title'] ?? '') ?>" aria-label="Fotoğraf <?= $i + 1 ?> / <?= count($slides) ?>"><img src="<?= e($s) ?>" alt="<?= e($gm[$s]['title'] ?? '') ?>" width="1200" height="1200"<?= $i ? ' loading="lazy"' : ' fetchpriority="high"' ?> decoding="async"></button><?php endforeach; ?>
+        </div>
+        <?php if (count($slides) > 1): ?>
+          <button type="button" class="slider__nav slider__nav--prev" data-slider-prev aria-label="Önceki fotoğraf"><?= icon('sol') ?></button>
+          <button type="button" class="slider__nav slider__nav--next" data-slider-next aria-label="Sonraki fotoğraf"><?= icon('sag') ?></button>
+          <div class="slider__dots" data-slider-dots><?php foreach ($slides as $i => $s): ?><button type="button" aria-label="<?= $i + 1 ?>. fotoğraf"<?= $i ? '' : ' aria-current="true"' ?>></button><?php endforeach; ?></div>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
   </section>
   <section class="wrap page-body">
     <?php if ($list): ?>
