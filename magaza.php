@@ -97,7 +97,7 @@ $ogType = 'product';
 include __DIR__ . '/inc/header.php';
 ?>
   <article class="event product">
-    <header class="wrap event__head">
+    <header class="wrap event__head"><meta charset="utf-8">
       <a class="back" href="/magaza/"><?= icon('sol') ?>Mağaza</a>
       <h1 class="display display--md"><?= e($p['name']) ?></h1>
       <?php if (trim($p['summary'] ?? '') !== ''): ?><p class="lead"><?= e($p['summary']) ?></p><?php endif; ?>
