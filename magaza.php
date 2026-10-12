@@ -126,6 +126,9 @@ include __DIR__ . '/inc/header.php';
       </div>
 
       <aside class="event__side">
+        <?php foreach (my_orders(current_user()) as $mo) if ($mo['product'] === $p['id'] && order_unpaid($mo)): ?>
+          <div class="notice notice--warn"><?= icon('bilgi') ?><div><p>Bu ürün için ödemesi tamamlanmamış bir siparişiniz var (<?= e($mo['code']) ?>, <?= money($mo['total']) ?>).</p><p><a class="link" href="<?= e(order_url($mo, true)) ?>">Siparişe git ve ödemeyi tamamla</a></p></div></div>
+        <?php break; endif; ?>
         <form class="book" method="get" action="<?= e($buyUrl) ?>" data-buy>
           <div class="book__price"><span class="label">Fiyat</span><strong><?= money($p['price']) ?></strong></div>
           <ul class="book__meta">

@@ -812,6 +812,7 @@ body.has-modal { overflow: hidden; }
 .rrow__info a:hover strong { color: var(--accent); }
 .rrow__info .muted { font-size: 13.5px; }
 .rlist--past .rrow { opacity: .8; }
+.rrow.is-off { opacity: .7; }
 @media (max-width: 600px) { .rrow { grid-template-columns: 72px minmax(0, 1fr); } .rrow > .btn { grid-column: 1 / -1; } }
 
 .profile { padding-top: clamp(32px, 5vw, 64px); padding-bottom: clamp(64px, 8vw, 104px); }

@@ -109,6 +109,28 @@ function order_url(array $o, bool $withKey = false): string {
   return '/siparis/' . rawurlencode($o['code']) . '/' . ($withKey ? '?k=' . order_key($o) : '');
 }
 
+// Bu tarayıcıdan verilen son siparişler (kod:anahtar), üye olmadan sipariş verenler yarım kalan ödemeye dönebilsin diye
+const ORDER_COOKIE = 'ise_siparisler';
+
+function order_remember(array $o): void {
+  $list = array_slice(array_values(array_unique([$o['code'] . ':' . order_key($o), ...array_filter(explode(',', (string) ($_COOKIE[ORDER_COOKIE] ?? '')))])), 0, 10);
+  setcookie(ORDER_COOKIE, implode(',', $list), ['expires' => time() + 90 * 86400, 'path' => '/', 'samesite' => 'Lax', 'httponly' => true, 'secure' => https()]);
+}
+
+// Üyenin siparişleri ve bu tarayıcıdan verilenler, yeniden eskiye
+function my_orders(?array $me): array {
+  $keys = [];
+  foreach (explode(',', (string) ($_COOKIE[ORDER_COOKIE] ?? '')) as $x) if (str_contains($x, ':')) { [$k, $v] = explode(':', $x, 2); $keys[strtoupper($k)] = $v; }
+  $list = array_values(array_filter(orders_all(), fn($o) => ($me && ($o['user'] ?? '') === $me['id']) || (isset($keys[$o['code']]) && hash_equals(order_key($o), $keys[$o['code']]))));
+  usort($list, fn($a, $b) => strcmp($b['created'], $a['created']));
+  return $list;
+}
+
+// Ödemesi yapılmamış, iptal edilmemiş sipariş
+function order_unpaid(array $o): bool {
+  return $o['status'] === 'beklemede' && empty($o['paid']);
+}
+
 function order_pay_url(array $o): string {
   return '/siparis-odeme.php?kod=' . rawurlencode($o['code']) . '&k=' . order_key($o);
 }

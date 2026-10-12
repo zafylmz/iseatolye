@@ -85,6 +85,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $max > 0 && $methods) {
     if ($res[0] === 'err') $errors[] = $res[1];
     else {
       $o = $res[1];
+      order_remember($o);
       mail_order($o);
       if ($o['method'] === 'kart') { header('Location: ' . order_pay_url($o), true, 303); exit; }
       header('Location: ' . order_url($o, true) . '&yeni=1', true, 303);

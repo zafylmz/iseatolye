@@ -98,6 +98,7 @@ $moreOn = (bool) array_filter(array_keys($navMore), $isOn);
             <div class="nav__me"><?= avatar($me) ?><span><strong><?= e($me['name']) ?></strong><span><?= e($me['email'] ?? '') ?></span></span></div>
             <div class="nav__acts">
               <a href="/hesabim/"><?= icon('bilet') ?>Etkinliklerim</a>
+              <a href="/hesabim/?s=satin-almalar"><?= icon('canta') ?>Satın almalarım</a>
               <a href="<?= e(user_url($me)) ?>"><?= icon('kisi') ?>Profilim</a>
               <a href="/hesabim/?s=profil"><?= icon('ayar') ?>Hesap ayarları</a>
               <a href="/cikis/"><?= icon('cikis') ?>Çıkış yap</a>
@@ -114,6 +115,7 @@ $moreOn = (bool) array_filter(array_keys($navMore), $isOn);
             <button class="usermenu__btn" type="button" aria-expanded="false" aria-controls="usermenu"><?= avatar($me, 'sm') ?><span><?= e(explode(' ', $me['name'])[0]) ?></span></button>
             <div class="usermenu__panel" id="usermenu" hidden>
               <a href="/hesabim/"><?= icon('bilet') ?>Etkinliklerim</a>
+              <a href="/hesabim/?s=satin-almalar"><?= icon('canta') ?>Satın almalarım</a>
               <a href="<?= e(user_url($me)) ?>"><?= icon('kisi') ?>Profilim</a>
               <a href="/hesabim/?s=profil"><?= icon('ayar') ?>Hesap ayarları</a>
               <a href="/cikis/"><?= icon('cikis') ?>Çıkış yap</a>
