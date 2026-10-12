@@ -13,7 +13,6 @@ RewriteRule ^ https://www.%1%{REQUEST_URI} [L,R=301]
 # Eski WordPress adresleri
 RewriteRule ^etn/([a-z0-9-]+?)(-\d+)?/?$ /etkinlik/$1/ [L,R=301]
 RewriteRule ^etkinlik-takvimi/?$ /takvim/ [L,R=301]
-RewriteRule ^magaza/?$ /etkinlikler/ [L,R=301]
 
 # Temiz adresler
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
@@ -22,13 +21,17 @@ RewriteRule ^etkinlik/([a-z0-9-]+)/?$ etkinlik.php?slug=$1 [L,QSA]
 RewriteRule ^etkinlik/([a-z0-9-]+)/katil/?$ katil.php?slug=$1 [L,QSA]
 RewriteRule ^etkinlik/([a-z0-9-]+)/takvim\.ics$ ics.php?slug=$1 [L,QSA]
 RewriteRule ^bilet/([A-Za-z0-9-]+)/?$ bilet.php?kod=$1 [L,QSA]
+RewriteRule ^magaza/?$ magaza.php [L,QSA]
+RewriteRule ^magaza/([a-z0-9-]+)/?$ magaza.php?slug=$1 [L,QSA]
+RewriteRule ^magaza/([a-z0-9-]+)/siparis/?$ magaza-siparis.php?slug=$1 [L,QSA]
+RewriteRule ^siparis/([A-Za-z0-9-]+)/?$ siparis.php?kod=$1 [L,QSA]
 RewriteRule ^takvim/?$ takvim.php [L,QSA]
 RewriteRule ^galeri/?$ galeri.php [L,QSA]
 RewriteRule ^galeri/([a-z0-9-]+)/?$ galeri.php?slug=$1 [L,QSA]
 RewriteRule ^mekanlar/?$ mekanlar.php [L,QSA]
 RewriteRule ^mekanlar/([a-z0-9-]+)/?$ mekanlar.php?slug=$1 [L,QSA]
 RewriteRule ^uye/([a-z0-9]+)/?$ uye.php?k=$1 [L,QSA]
-RewriteRule ^(kurumsal|hakkimizda|iletisim|gizlilik|katilim-kosullari|giris|uye-ol|cikis|hesabim|sifremi-unuttum|sifre-yenile)/?$ $1.php [L,QSA]
+RewriteRule ^(kurumsal|hakkimizda|iletisim|gizlilik|katilim-kosullari|mesafeli-satis|giris|uye-ol|cikis|hesabim|sifremi-unuttum|sifre-yenile)/?$ $1.php [L,QSA]
 RewriteRule ^blog/?$ blog.php [L,QSA]
 RewriteRule ^blog/rss\.xml$ blog-rss.php [L]
 RewriteRule ^blog/([a-z0-9-]+)/?$ blog-yazi.php?slug=$1 [L,QSA]
@@ -36,7 +39,9 @@ RewriteRule ^blog/([a-z0-9-]+)/?$ blog-yazi.php?slug=$1 [L,QSA]
 # İç klasörlere doğrudan erişimi kapat
 RewriteRule ^(data|inc)(/|$) - [F,L]
 RewriteRule ^yonetim/(views/|lib\.php|actions\.php) - [F,L]
-RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
+RewriteRule ^(KURULUM\.txt|README\.md|error_log|.*\.(log|bak|sql|zip|md|lock|tmp))$ - [F,L,NC]
+# Gizli dosya ve klasörler (.git, .env, .gitignore vb.) açılmaz
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
 
 # Güvenlik başlıkları: site başka bir sitenin içinde çerçeveye alınamaz, tarayıcı dosya türünü tahmin etmez,
 # bağlantı her zaman HTTPS ile kurulur
@@ -45,11 +50,16 @@ RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  Header always set Strict-Transport-Security "max-age=31536000" env=HTTPS
+  Header always set Strict-Transport-Security "max-age=31536000"
+  # İçerik güvenlik politikası: sayfalar yalnızca bu sitenin dosyalarını çalıştırır; tek dış kaynak kartla ödeme için PayTR
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paytr.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-src https://www.paytr.com; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
+  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+  Header always unset X-Powered-By
+  Header unset X-Powered-By
 </IfModule>
 
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json application/xml text/xml application/rss+xml text/plain text/calendar
 </IfModule>
 <IfModule mod_expires.c>
   ExpiresActive On
@@ -59,4 +69,6 @@ RewriteRule ^(KURULUM\.txt|error_log|.*\.(log|bak|sql|zip))$ - [F,L,NC]
   ExpiresByType image/jpeg "access plus 1 month"
   ExpiresByType image/png "access plus 1 month"
   ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/avif "access plus 1 month"
 </IfModule>

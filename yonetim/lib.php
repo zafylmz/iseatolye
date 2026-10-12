@@ -53,7 +53,13 @@ function setup_key(): string {
   return $k;
 }
 
-function logged_in(): bool { return !empty($_SESSION['ok']) && has_password() && hash_equals(auth_version(), (string) ($_SESSION['pv'] ?? '')); }
+// Panel 2 saat işlem yapılmazsa kendiliğinden kapanır
+function logged_in(): bool {
+  if (empty($_SESSION['ok']) || !has_password() || !hash_equals(auth_version(), (string) ($_SESSION['pv'] ?? ''))) return false;
+  if (time() - (int) ($_SESSION['seen'] ?? time()) > 7200) { $_SESSION = []; return false; }
+  $_SESSION['seen'] = time();
+  return true;
+}
 
 function csrf(): string {
   if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
@@ -88,8 +94,7 @@ function hidden(string $tok, string $action, array $extra = []): string {
 // Her kayıttan önce dosyanın bir kopyası data/yedek/ altına alınır; her dosyadan son 20 kopya tutulur.
 function backup_file(string $file): void {
   if ($n = db_doc($file)) {
-    $q = db()->prepare('SELECT veri FROM ise_belgeler WHERE ad = ?'); $q->execute([$n]);
-    if (($v = $q->fetchColumn()) !== false) db_backup(db(), $n, (string) $v);
+    if (($v = db_fetch($n, $file)) !== false) db_backup(db(), $n, (string) $v);
     return;
   }
   if (!is_file($file)) return;
@@ -103,6 +108,7 @@ function backup_file(string $file): void {
 
 function write_json(string $file, array $data): void {
   backup_file($file);
+  if (db_doc($file)) { json_update($file, function (array &$d) use ($data) { $d = $data; }); return; }
   $tmp = $file . '.tmp';
   file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
   rename($tmp, $file);
@@ -122,6 +128,9 @@ function catalog_update(callable $fn) {
 function regs_update(callable $fn) {
   return json_update(REGS_FILE, function (array &$d) use ($fn) { $d['regs'] ??= []; return $fn($d); }, ['regs' => []]);
 }
+
+// Yalnızca http(s) bağlantıları kabul edilir (javascript: gibi adresler kaydedilmez)
+function web_url(string $u): bool { return (bool) filter_var($u, FILTER_VALIDATE_URL) && (bool) preg_match('#^https?://#i', $u); }
 
 function post(string $key, string $default = ''): string {
   return trim(str_replace("\r\n", "\n", (string) ($_POST[$key] ?? $default)));
@@ -157,8 +166,8 @@ function files_of(string $field): array {
   return $out;
 }
 
-// Görseli doğrular, gerekirse 2400 piksele küçültür, telefon fotoğraflarını düz çevirir ve /uploads altına kaydeder.
-// Kaydedilen her görsel kütüphaneye (Galeri) eklenir. Dönen değer site yolu.
+// Görseli doğrular; telefon fotoğraflarını düz çevirir, en fazla 1920 piksele küçültüp sıkıştırarak /uploads altına kaydeder.
+// Saydamlık kullanmayan PNG'ler JPG olur. Büyük orijinal sunucuda tutulmaz. Kaydedilen her görsel kütüphaneye (Galeri) eklenir.
 function store_image(array $file, string $prefix, string $sub = '', array $meta = []): ?string {
   if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
   if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) throw new RuntimeException('Görsel sunucunun izin verdiği boyuttan büyük (' . ini_get('upload_max_filesize') . ').');
@@ -170,22 +179,12 @@ function store_image(array $file, string $prefix, string $sub = '', array $meta 
   $ext = $types[$info[2]];
   $dir = UPLOAD_DIR . ($sub !== '' ? '/' . $sub : '');
   if (!is_dir($dir)) mkdir($dir, 0755, true);
-  $name = substr(slugify($prefix, 'gorsel'), 0, 50) . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
-  $dest = $dir . '/' . $name;
-  $max = 2400;
-  $turn = exif_turn($file['tmp_name'], $ext);
-  if (function_exists('imagecreatetruecolor') && $ext !== 'gif' && (max($info[0], $info[1]) > $max || $turn !== 0) && ($src = image_open($file['tmp_name'], $ext))) {
-    $src = image_upright($src, $file['tmp_name'], $ext);
-    $sw = imagesx($src); $sh = imagesy($src);
-    $scale = min(1, $max / max($sw, $sh));
-    $w = (int) round($sw * $scale); $h = (int) round($sh * $scale);
-    $dst = imagecreatetruecolor($w, $h);
-    imagealphablending($dst, false); imagesavealpha($dst, true);
-    imagecopyresampled($dst, $src, 0, 0, 0, 0, $w, $h, $sw, $sh);
-    match ($ext) { 'jpg' => imagejpeg($dst, $dest, 86), 'png' => imagepng($dst, $dest, 6), 'webp' => imagewebp($dst, $dest, 86) };
-  } elseif (!move_uploaded_file($file['tmp_name'], $dest)) {
-    throw new RuntimeException('Görsel kaydedilemedi. uploads klasörünün yazma izni olduğundan emin olun.');
-  }
+  $base = $dir . '/' . substr(slugify($prefix, 'gorsel'), 0, 50) . '-' . bin2hex(random_bytes(4));
+  $out = image_optimize($file['tmp_name'], $ext, $base);
+  if ($out !== '') $ext = $out;
+  elseif (!move_uploaded_file($file['tmp_name'], $base . '.' . $ext)) throw new RuntimeException('Görsel kaydedilemedi. uploads klasörünün yazma izni olduğundan emin olun.');
+  $dest = $base . '.' . $ext;
+  $name = basename($dest);
   @chmod($dest, 0644);
   $path = '/uploads/' . ($sub !== '' ? $sub . '/' : '') . $name;
   media_save($path, $meta + ['added' => date('Y-m-d H:i:s')]);
@@ -216,6 +215,8 @@ function media_usage(): array {
   }
   foreach ($cat['venues'] ?? [] as $v) $add((string) ($v['photo'] ?? ''), 'Mekan: ' . $v['name'], './?s=mekanlar&duzenle=' . rawurlencode($v['id']) . '#mekanlar');
   foreach ($cat['instructors'] ?? [] as $x) $add((string) ($x['photo'] ?? ''), 'Eğitmen: ' . $x['name'], './?s=mekanlar&duzenle=' . rawurlencode($x['id']) . '#egitmenler');
+  require_once ROOT . '/inc/shop.php';
+  foreach (products_all() as $p) foreach ($p['photos'] ?? [] as $g) $add((string) $g, 'Ürün: ' . $p['name'], './?s=urun&id=' . rawurlencode($p['id']));
   foreach (json_read(BLOG_FILE)['posts'] ?? [] as $p) {
     $u = './?s=yazi&slug=' . rawurlencode($p['slug']);
     $add((string) ($p['cover'] ?? ''), 'Blog kapağı: ' . $p['title'], $u);

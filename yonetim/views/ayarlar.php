@@ -3,7 +3,7 @@
 $st = $c['settings']; $ct = $c['contact'];
 $socials = $c['socials'] ?? [];
 ?>
-<div class="bar"><h1>Ayarlar</h1><nav class="jump jump--inline"><a href="#iletisim">İletişim</a><a href="#kayit">Kayıt</a><a href="#odeme">Ödeme</a><a href="#eposta">E-posta</a><a href="#metinler">Metinler</a></nav></div>
+<div class="bar"><h1>Ayarlar</h1><nav class="jump jump--inline"><a href="#iletisim">İletişim</a><a href="#kayit">Kayıt</a><a href="#odeme">Ödeme</a><a href="#kart">Kartla ödeme</a><a href="#satici">Satıcı bilgileri</a><a href="#eposta">E-posta</a><a href="#metinler">Metinler</a></nav></div>
 <form method="post">
   <?= hidden($tok, 'ayarlar') ?>
   <section class="card" id="iletisim">
@@ -47,6 +47,18 @@ $socials = $c['socials'] ?? [];
     <p class="hint">Süre dolan ve ödemesi işaretlenmeyen kayıtlar silinmez, ama kontenjandan düşer ve yer başkasına açılır. Kötü niyetli sahte kayıtlarla etkinliğin "doldu" görünmesini önler.</p>
   </section>
 
+  <section class="card" id="satici">
+    <h2>Satıcı bilgileri</h2>
+    <p class="hint">Ön bilgilendirme formu ve mesafeli satış sözleşmesinde (<a href="/mesafeli-satis/" target="_blank">/mesafeli-satis/</a>) satıcı olarak görünür. Kartla ödeme için PayTR bu bilgilerin sitede yayında olmasını ister. Telefon ve e-posta İletişim bölümünden alınır.</p>
+    <div class="grid2">
+      <label>Unvan / ad soyad <span class="opt">(şahıs şirketinde ad soyad)</span><input name="seller_title" value="<?= e($st['seller_title'] ?? '') ?>"></label>
+      <label>Vergi dairesi ve no<input name="seller_tax" value="<?= e($st['seller_tax'] ?? '') ?>" placeholder="Kadıköy VD · 1234567890"></label>
+      <label class="span2">Açık adres<input name="seller_address" value="<?= e($st['seller_address'] ?? '') ?>"></label>
+      <label>MERSİS no <span class="opt">(varsa)</span><input name="seller_mersis" value="<?= e($st['seller_mersis'] ?? '') ?>"></label>
+      <label>KEP adresi <span class="opt">(varsa)</span><input name="seller_kep" value="<?= e($st['seller_kep'] ?? '') ?>"></label>
+    </div>
+  </section>
+
   <section class="card" id="eposta">
     <h2>E-posta</h2>
     <label class="check"><input type="checkbox" name="mail_enabled" value="1"<?= !empty($st['mail_enabled']) ? ' checked' : '' ?>> Bilgilendirme e-postaları gönderilsin (kayıt, onay, şifre sıfırlama)</label>
@@ -64,6 +76,20 @@ $socials = $c['socials'] ?? [];
     <label>Site adresi<input name="site_url" value="<?= e($st['site_url'] ?? '') ?>"></label>
   </section>
   <div class="actions"><button class="btn">Ayarları kaydet</button></div>
+</form>
+<?php require_once ROOT . '/inc/paytr.php'; $pt = paytr_config() ?? []; ?>
+<form class="card" method="post" autocomplete="off" id="kart">
+  <?= hidden($tok, 'paytr') ?>
+  <h2>Kartla ödeme (PayTR) <?= $pt ? (!empty($pt['test']) ? pill('Test modu', 'warn') : pill('Açık', 'on')) : pill('Kapalı', 'off') ?></h2>
+  <p class="hint">PayTR Mağaza Paneli'nde <b>Bilgi</b> sayfasındaki Mağaza no, Mağaza parola ve Mağaza gizli anahtarı girin. Kaydettiğinizde bilgiler PayTR'ye sorularak denenir. Açıkken tüm ücretli etkinliklerde "Kredi / banka kartı" seçeneği görünür; ödeme alınan kayıt kendiliğinden "Ödendi" ve onaylı olur.</p>
+  <p class="hint">PayTR panelinde <b>Destek &amp; Kurulum &gt; Ayarlar</b> bölümünde <b>Bildirim URL</b> olarak şunu yazın: <code><?= e(site_url('/paytr-bildirim.php')) ?></code> Bu adres yazılmazsa ödemeler alınır ama kayıtlar "ödendi" olmaz.</p>
+  <div class="grid2">
+    <label>Mağaza no<input name="pt_id" value="<?= e($pt['merchant_id'] ?? '') ?>" inputmode="numeric" required spellcheck="false"></label>
+    <label>Ortam<select name="pt_mode"><option value="live"<?= $pt && empty($pt['test']) ? ' selected' : '' ?>>Canlı (gerçek ödeme)</option><option value="test"<?= !$pt || !empty($pt['test']) ? ' selected' : '' ?>>Test modu (test kartları)</option></select></label>
+    <label>Mağaza parola (merchant key) <span class="opt"><?= $pt ? '(değiştirmeyecekseniz boş bırakın)' : '' ?></span><input type="password" name="pt_key" autocomplete="new-password"<?= $pt ? '' : ' required' ?>></label>
+    <label>Mağaza gizli anahtar (merchant salt) <span class="opt"><?= $pt ? '(değiştirmeyecekseniz boş bırakın)' : '' ?></span><input type="password" name="pt_salt" autocomplete="new-password"<?= $pt ? '' : ' required' ?>></label>
+  </div>
+  <div class="actions"><button class="btn">Bilgileri dene ve kaydet</button><?php if ($pt): ?> <button class="btn btn--ghost" name="kaldir" value="1" formnovalidate>Kartla ödemeyi kapat</button><?php endif; ?></div>
 </form>
 <?php require_once ROOT . '/inc/smtp.php'; $sm = smtp_config() ?? []; $mailHost = preg_replace('/^www\./', '', strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'iseatolye.com.tr')))); ?>
 <form class="card" method="post" autocomplete="off" id="smtp">

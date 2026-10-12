@@ -35,6 +35,9 @@ $filter = function (array $ev) use ($cat, $ven, $free, $q, $norm, $inRange): boo
 };
 $list = $past ? array_values(array_filter(past_events(), $filter)) : upcoming_events(0, $filter);
 $filtered = $cat || $ven || $when || $free || $q !== '';
+// Filtreli ve arama sonuçları dizine eklenmez (sonsuz kopya sayfa olmasın); geçmiş etkinlikler kendi adresinde
+if ($filtered) $noindex = true;
+elseif ($past) $canonical = '/etkinlikler/?gecmis=1';
 $title = ($past ? 'Geçmiş etkinlikler' : 'Etkinlikler') . ' · ' . $c['brand']['name'];
 $description = 'Silivri ve çevresindeki atölyeler, yoga ve iyi oluş buluşmaları, sosyal etkinlikler. Tarih, mekân ve kontenjan bilgisiyle.';
 include __DIR__ . '/inc/header.php';

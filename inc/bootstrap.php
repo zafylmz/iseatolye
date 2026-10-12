@@ -9,10 +9,10 @@ ini_set('display_errors', '0');
 ini_set('error_log', __DIR__ . '/../data/hata.log');
 // Yakalanmamış hata: boş sayfa yerine kısa bir açıklama gösterilir, ayrıntı hata kaydına yazılır.
 set_exception_handler(function (Throwable $ex) {
-  error_log(get_class($ex) . ': ' . $ex->getMessage() . ' @ ' . basename($ex->getFile()) . ':' . $ex->getLine() . ' ' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' ' . ($_SERVER['REQUEST_URI'] ?? ''));
+  error_log(get_class($ex) . ': ' . $ex->getMessage() . ' @ ' . basename($ex->getFile()) . ':' . $ex->getLine() . ' ' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' ' . preg_replace('/([?&](k|t|token)=)[^&]+/', '$1***', (string) ($_SERVER['REQUEST_URI'] ?? '')));
   if (!headers_sent()) { http_response_code(500); header('Content-Type: text/html; charset=utf-8'); }
   $msg = $ex instanceof RuntimeException ? $ex->getMessage() : 'Beklenmeyen bir sorun oluştu.';
-  echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bir sorun oluştu</title>'
+  echo '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bir sorun oluştu</title>'
     . '<div style="font:16px/1.6 system-ui,sans-serif;max-width:520px;margin:12vh auto;padding:0 20px;color:#33271e"><h1 style="font-size:22px">Bir sorun oluştu</h1><p>'
     . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p><p><a href="javascript:history.back()" style="color:#8b5e3c">Geri dönüp tekrar deneyin</a></p></div>';
 });
@@ -22,6 +22,7 @@ const DATA = ROOT . '/data';
 const CONTENT_FILE = DATA . '/content.json';
 const SECRET_FILE = DATA . '/secret.php';
 const RATE_FILE = DATA . '/rate.json';
+const SITE_URL = 'https://www.iseatolye.com.tr';
 
 const TR_MONTHS = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const TR_MONTHS_SHORT = ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
@@ -70,7 +71,8 @@ function wa_href(string $num, string $text = ''): string {
 function site_url(string $path = ''): string {
   $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
   if (is_local()) return 'http://' . $host . $path;
-  $base = trim((string) setting('site_url', '')) ?: 'https://' . ($host ?: 'www.iseatolye.com.tr');
+  // Adres hiçbir zaman isteğin Host başlığından üretilmez (şifre yenileme bağlantıları başka alan adına yönlendirilemesin)
+  $base = trim((string) setting('site_url', '')) ?: SITE_URL;
   return rtrim($base, '/') . $path;
 }
 
@@ -79,14 +81,17 @@ function is_local(): bool {
 }
 
 function https(): bool {
-  return !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+  if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return true;
+  // Canlıda site yalnızca HTTPS ile açılır (.htaccess yönlendirir); sunucu bunu bildirmese de çerezler güvenli işaretlenir
+  return !is_local() && PHP_SAPI !== 'cli';
 }
 
 // ---------- Veritabanı (MySQL) ----------
-// Panel > Sistem kontrolü'nden bağlanınca üyeler, katılımlar, yorumlar, ilgilenenler, mesajlar ve blog etkileşimleri
-// MySQL'de tutulur. Bağlantı bilgisi data/db.php dosyasındadır. Bağlı değilse aynı veriler data/ altındaki dosyalardadır.
+// Panel > Sistem kontrolü'nden bağlanınca sitenin bütün verileri (içerik, etkinlikler, blog, medya, üyeler, katılımlar,
+// yorumlar, ilgilenenler, mesajlar, mağaza ürünleri ve siparişler) MySQL'de tutulur. Bağlantı bilgisi data/db.php dosyasındadır.
+// Bağlı değilse aynı veriler data/ altındaki dosyalardadır. Şifreler ve anahtarlar her zaman data/ altındaki PHP dosyalarında kalır.
 const DB_FILE = DATA . '/db.php';
-const DB_DOCS = ['users', 'registrations', 'comments', 'interests', 'messages', 'blog-comments', 'blog-likes', 'resets'];
+const DB_DOCS = ['content', 'events', 'blog', 'medya', 'users', 'registrations', 'comments', 'interests', 'messages', 'blog-comments', 'blog-likes', 'resets', 'magaza', 'siparisler'];
 
 function db_config(): ?array {
   static $c = false;
@@ -121,8 +126,26 @@ function db_doc(string $file): ?string {
   return in_array($n, DB_DOCS, true) && db_config() ? $n : null;
 }
 
+// Belgeyi veritabanından okur. Veritabanında henüz yoksa ve data/ altında dosyası varsa önce onu aktarır
+// (veritabanı sonradan genişletildiğinde dosyada kalan veriler ilk açılışta kendiliğinden taşınır).
+// Aktarılan dosya silinmez, data/yedek/ altına taşınır. Belge hiç yoksa false döner.
+function db_fetch(string $n, string $file) {
+  $q = db()->prepare('SELECT veri FROM ise_belgeler WHERE ad = ?');
+  $q->execute([$n]);
+  $v = $q->fetchColumn();
+  if ($v !== false || !is_file($file)) return $v;
+  $raw = (string) @file_get_contents($file);
+  if (is_array(json_decode($raw, true))) {
+    db()->prepare('INSERT IGNORE INTO ise_belgeler (ad, veri, guncel) VALUES (?, ?, NOW())')->execute([$n, $raw]);
+    if (!is_dir(DATA . '/yedek')) @mkdir(DATA . '/yedek', 0755, true);
+    @rename($file, DATA . '/yedek/' . $n . '-veritabanina-tasindi-' . date('Ymd-His') . '.json') || @rename($file, $file . '.tasindi');
+  } elseif ($raw !== '') error_log('Veritabanına aktarılamadı, dosya bozuk: ' . basename($file));
+  $q->execute([$n]);
+  return $q->fetchColumn();
+}
+
 function data_exists(string $file): bool {
-  if ($n = db_doc($file)) { $q = db()->prepare('SELECT 1 FROM ise_belgeler WHERE ad = ?'); $q->execute([$n]); return (bool) $q->fetchColumn(); }
+  if ($n = db_doc($file)) return db_fetch($n, $file) !== false;
   return is_file($file);
 }
 
@@ -165,9 +188,7 @@ function db_update(string $n, callable $fn, array $default) {
 // ---------- JSON dosyaları ----------
 function json_read(string $file, array $default = []): array {
   if ($n = db_doc($file)) {
-    $q = db()->prepare('SELECT veri FROM ise_belgeler WHERE ad = ?');
-    $q->execute([$n]);
-    $d = json_decode((string) $q->fetchColumn(), true);
+    $d = json_decode((string) db_fetch($n, $file), true);
     return is_array($d) ? $d : $default;
   }
   if (!is_file($file)) return $default;
@@ -178,7 +199,7 @@ function json_read(string $file, array $default = []): array {
 // Dosyayı kilitleyip okur, $fn ile değiştirir ve geri yazar. $fn'in dönüş değerini döndürür.
 // Yeni içerik önce geçici dosyaya yazılır, sonra eskisinin yerine konur: yazma yarıda kalırsa (kota dolması vb.) eski dosya bozulmaz.
 function json_update(string $file, callable $fn, array $default = []) {
-  if ($n = db_doc($file)) return db_update($n, $fn, $default);
+  if ($n = db_doc($file)) { db_fetch($n, $file); return db_update($n, $fn, $default); }
   if (!is_dir(dirname($file))) @mkdir(dirname($file), 0755, true);
   $lock = @fopen($file . '.lock', 'c');
   if (!$lock) throw new RuntimeException('Kayıt dosyası açılamadı. data klasörünün yazma iznini kontrol edin.');
@@ -463,4 +484,11 @@ function send_mail(string $to, string $subject, string $text): bool {
 
 function admin_email(): string {
   return trim((string) setting('notify_email', '')) ?: (string) (content()['contact']['email'] ?? '');
+}
+
+// Arama sonuçlarında görünen sayfa yolu (BreadcrumbList). $items: ['Başlık' => '/adres/', ...]; Ana sayfa başa eklenir.
+function breadcrumb_ld(array $items): array {
+  $list = []; $i = 1;
+  foreach (['Ana sayfa' => '/'] + $items as $name => $url) $list[] = ['@type' => 'ListItem', 'position' => $i++, 'name' => (string) $name, 'item' => site_url($url)];
+  return ['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $list];
 }

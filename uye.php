@@ -33,7 +33,7 @@ $noindex = true;
 include __DIR__ . '/inc/header.php';
 ?>
   <section class="wrap profile">
-    <header class="profile__head">
+    <header class="profile__head"><meta charset="utf-8">
       <?= avatar($u, 'xl') ?>
       <div class="profile__who">
         <p class="label">Topluluk üyesi</p>

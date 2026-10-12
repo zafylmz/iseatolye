@@ -34,7 +34,10 @@
   const menuBtn = $('.menu-btn');
   const nav = $('#menu');
   if (menuBtn && nav) {
+    const header = $('.header');
     const setMenu = (open) => {
+      // Duyuru şeridi görünürken menü başlığın hemen altından başlasın
+      if (open && header) nav.style.setProperty('--menu-top', Math.max(0, header.getBoundingClientRect().bottom) + 'px');
       nav.classList.toggle('is-open', open);
       menuBtn.setAttribute('aria-expanded', String(open));
       menuBtn.setAttribute('aria-label', open ? 'Menüyü kapat' : 'Menüyü aç');
@@ -43,7 +46,19 @@
     menuBtn.addEventListener('click', () => setMenu(!nav.classList.contains('is-open')));
     nav.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
     addEventListener('keydown', (e) => { if (e.key === 'Escape' && nav.classList.contains('is-open')) { setMenu(false); menuBtn.focus(); } });
-    matchMedia('(min-width: 1080px)').addEventListener('change', (m) => { if (m.matches) setMenu(false); });
+    matchMedia('(min-width: 1001px)').addEventListener('change', (m) => { if (m.matches) setMenu(false); });
+  }
+
+  // ---------- Üst menü: "Hakkımızda" açılır listesi ----------
+  const moreBtn = $('.nav__more');
+  const moreGroup = moreBtn && moreBtn.closest('.nav__group');
+  if (moreGroup) {
+    const setMore = (open) => { moreGroup.classList.toggle('is-open', open); moreBtn.setAttribute('aria-expanded', String(open)); };
+    moreBtn.addEventListener('click', (e) => { e.stopPropagation(); setMore(!moreGroup.classList.contains('is-open')); });
+    moreGroup.addEventListener('mouseleave', () => setMore(false));
+    moreGroup.addEventListener('focusout', (e) => { if (!moreGroup.contains(e.relatedTarget)) setMore(false); });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.nav__group')) setMore(false); });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && moreGroup.classList.contains('is-open')) { setMore(false); moreBtn.focus(); } });
   }
 
   // ---------- Üye menüsü ----------
@@ -69,10 +84,25 @@
       location.href = '/takvim/?ay=' + encodeURIComponent(ym);
     }
   };
+  // Telefonda gün kutuları küçük: etkinlikli güne dokununca alttaki listede o günün etkinliklerine gider
+  const calSmall = matchMedia('(max-width: 760px)');
+  const showDay = (holder, day) => {
+    const hits = $$('[data-cal-item="' + day + '"]', holder);
+    if (!hits.length) return;
+    $$('.cal__day.is-picked, [data-cal-item].is-hit', holder).forEach((x) => x.classList.remove('is-picked', 'is-hit'));
+    $('[data-cal-day="' + day + '"]', holder)?.classList.add('is-picked');
+    hits.forEach((x) => x.classList.add('is-hit'));
+    hits[0].scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  };
   const bindCal = (holder, push) => {
     holder.addEventListener('click', (e) => {
       const go = e.target.closest('[data-cal-go]');
-      if (!go || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      if (!go) {
+        const day = calSmall.matches && e.target.closest('[data-cal-day]');
+        if (day) { e.preventDefault(); showDay(holder, day.dataset.calDay); }
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
       e.preventDefault();
       loadMonth(holder, go.dataset.calGo, push);
     });
@@ -277,6 +307,62 @@
     });
   }
 
+  // ---------- Mağaza: ürün sayfasında adet, sipariş formunda teslimat ve özet ----------
+  $$('form[data-buy], form[data-order]').forEach((form) => {
+    const qty = $('input[type=number]', form);
+    if (!qty) return;
+    const fmt = (n) => n.toLocaleString('tr-TR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' ₺';
+    const ship = $('[data-ship]', form);
+    const update = () => {
+      const max = parseInt(qty.max || '1', 10) || 1;
+      let q = parseInt(qty.value || '1', 10);
+      if (!(q >= 1)) q = 1;
+      if (q > max) q = max;
+      if (String(q) !== qty.value) qty.value = q;
+      $$('[data-qty]', form).forEach((b) => { b.disabled = b.dataset.qty === '-1' ? q <= 1 : q >= max; });
+      if (!form.hasAttribute('data-order')) return;
+      const d = (form.querySelector('[data-delivery]:checked') || {}).value || '';
+      if (ship) ship.hidden = d !== 'kargo';
+      const sub = parseFloat(form.dataset.price || '0') * q;
+      const free = parseFloat(form.dataset.free || '0');
+      const fee = d === 'kargo' && !(free > 0 && sub >= free) ? parseFloat(form.dataset.fee || '0') : 0;
+      const set = (sel, v) => { const el = $(sel); if (el) el.textContent = v; };
+      set('[data-sum-qty]', q);
+      set('[data-sum-sub]', fmt(sub));
+      set('[data-sum-ship]', d !== 'kargo' ? '–' : fee > 0 ? fmt(fee) : 'Ücretsiz');
+      set('[data-sum-total]', fmt(sub + fee));
+    };
+    $$('[data-qty]', form).forEach((b) => b.addEventListener('click', () => {
+      qty.value = (parseInt(qty.value || '1', 10) || 1) + parseInt(b.dataset.qty, 10);
+      update();
+    }));
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+    update();
+    if (form.hasAttribute('data-order') && !form.hasAttribute('data-guard-form')) form.addEventListener('submit', () => {
+      const b = $('[data-join-btn]', form);
+      if (b) setTimeout(() => { b.disabled = true; }, 0);
+    });
+  });
+
+  // ---------- Kayan galeri (mağaza girişi): oklar, noktalar, kendiliğinden geçiş ----------
+  $$('[data-slider]').forEach((box) => {
+    const track = $('[data-slider-track]', box);
+    const slides = Array.from(track.children);
+    const dots = $$('[data-slider-dots] button', box);
+    if (slides.length < 2) return;
+    const at = () => Math.round(track.scrollLeft / track.clientWidth);
+    const go = (i) => track.scrollTo({ left: ((i + slides.length) % slides.length) * track.clientWidth });
+    $('[data-slider-prev]', box).addEventListener('click', () => { go(at() - 1); stop(); });
+    $('[data-slider-next]', box).addEventListener('click', () => { go(at() + 1); stop(); });
+    dots.forEach((d, i) => d.addEventListener('click', () => { go(i); stop(); }));
+    track.addEventListener('scroll', () => { const i = at(); dots.forEach((d, k) => d.toggleAttribute('aria-current', k === i)); }, { passive: true });
+    let timer = null;
+    const stop = () => { clearInterval(timer); timer = null; };
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => { if (!document.hidden) go(at() + 1); }, 5000);
+    box.addEventListener('pointerdown', stop, { once: true });
+  });
+
   // ---------- İletişim formu: kurumsal alanlar ----------
   $$('.cform-contact').forEach((f) => {
     const sync = () => { const t = f.querySelector('[data-topic]:checked'); f.classList.toggle('is-corp', !!t && t.value === 'kurumsal'); };
@@ -403,8 +489,12 @@
   }
 })();
 
-// Şirket adına fatura kutusu: onay işareti ile açık/kapalı durumu aynı kalsın
-document.querySelectorAll('details.invbox').forEach((d) => {
-  const cb = d.querySelector('[data-inv-toggle]');
-  if (cb) d.addEventListener('toggle', () => { cb.checked = d.open; });
+// Fatura türü: bireysel / şirket adına alanlarını değiştir
+document.querySelectorAll('[data-inv]').forEach((box) => {
+  const sync = () => {
+    const t = (box.querySelector('[data-inv-type]:checked') || {}).value || 'bireysel';
+    box.querySelectorAll('[data-inv-group]').forEach((g) => { g.hidden = g.dataset.invGroup !== t; });
+  };
+  box.querySelectorAll('[data-inv-type]').forEach((r) => r.addEventListener('change', sync));
+  sync();
 });
