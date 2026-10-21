@@ -379,6 +379,8 @@ button { cursor: pointer; }
 .cal__ev time { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: var(--accent); transition: color .2s linear; }
 .cal__ev:hover time { color: #f4e3cf; }
 .cal__ev span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; }
+.cal__pl { display: block; margin-top: 2px; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .2s linear; }
+.cal__ev:hover .cal__pl { color: #f4e3cf; }
 .cal__ev.is-cancel { border-left-color: var(--line-2); background: var(--sand); color: var(--muted); text-decoration: line-through; }
 .cal__day.is-past .cal__ev:not(:hover) { background: var(--sand); border-left-color: var(--line-2); color: var(--muted); }
 .cal__day.is-past .cal__ev:not(:hover) time { color: var(--muted); }
@@ -400,7 +402,7 @@ button { cursor: pointer; }
   .cal__day { min-height: 0; aspect-ratio: 1; padding: 4px; align-items: center; justify-content: center; gap: 2px; }
   .cal__evs { display: flex; gap: 3px; }
   .cal__ev { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); }
-  .cal__ev time, .cal__ev span { display: none; }
+  .cal__ev time, .cal__ev span, .cal__pl { display: none; }
   .cal__day.is-past .cal__ev:not(:hover) { background: var(--line-2); }
   .cal__list { display: block; }
 }
