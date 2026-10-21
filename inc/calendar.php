@@ -53,7 +53,7 @@ function calendar_month(int $y, int $m, string $mode = 'full'): string {
             <span class="cal__num"><?= $d ?></span>
             <?php if ($list): ?><ul class="cal__evs">
               <?php foreach ($list as [$ev, $s]): $cancel = ($s['status'] ?? '') === 'iptal' || ($ev['status'] ?? '') === 'iptal'; ?>
-                <li><a class="cal__ev<?= $cancel ? ' is-cancel' : '' ?>" href="<?= e(event_url($ev)) ?>" title="<?= e($ev['title'] . ' · ' . session_when($s, false)) ?>"><?php if ($s['start'] ?? ''): ?><time><?= e($s['start']) ?></time><?php endif; ?><span><?= e($ev['title']) ?></span></a></li>
+                <li><a class="cal__ev<?= $cancel ? ' is-cancel' : '' ?>" href="<?= e(event_url($ev)) ?>" title="<?= e($ev['title'] . ' · ' . session_when($s, false) . ' · ' . session_place($s, false)) ?>"><?php if ($s['start'] ?? ''): ?><time><?= e($s['start']) ?></time><?php endif; ?><span><?= e($ev['title']) ?></span><small class="cal__pl"><?= e(session_place($s, false)) ?></small></a></li>
               <?php endforeach; ?>
             </ul><?php endif; ?>
           </div>
