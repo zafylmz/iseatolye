@@ -45,7 +45,7 @@ $isOn = fn($href) => $href === '/etkinlikler/' ? (str_starts_with($path, '/etkin
   <meta name="twitter:card" content="summary_large_image">
   <?php if (!empty($noindex)): ?><meta name="robots" content="noindex"><?php endif; ?>
   <link rel="preload" href="/assets/fonts/montserrat-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/assets/fonts/eb-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/eb-garamond-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="<?= e(asset('/assets/style.css')) ?>">
   <?php if (isset($nav['/blog/'])): ?><link rel="alternate" type="application/rss+xml" title="<?= e($brand) ?> · Blog" href="/blog/rss.xml"><?php endif; ?>
   <?= $headExtra ?? '' ?>
