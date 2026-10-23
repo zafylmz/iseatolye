@@ -500,7 +500,7 @@ switch ($action) {
     $c['home'] = array_merge($c['home'], [
       'eyebrow' => post('eyebrow'), 'title' => post('title'), 'subtitle' => post('subtitle'),
       'events_title' => post('events_title'), 'calendar_title' => post('calendar_title'), 'calendar_text' => post('calendar_text'),
-      'steps_title' => post('steps_title'), 'quote' => post('quote'), 'community_title' => post('community_title'), 'community_text' => post('community_text'),
+      'steps_title' => post('steps_title'), 'quote' => post('quote'),
     ]);
     $c['home']['steps'] = [];
     foreach (array_values((array) ($_POST['steps'] ?? [])) as $s) if (trim((string) ($s['title'] ?? '')) !== '') $c['home']['steps'][] = ['title' => trim((string) $s['title']), 'text' => trim((string) ($s['text'] ?? ''))];

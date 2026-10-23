@@ -13,17 +13,6 @@ $soon = array_slice($upcoming, 0, 4);
 [$cy, $cm] = cal_ym(null);
 $monthCount = array_sum(array_map('count', month_items($cy, $cm)));
 
-// Topluluk: son yorumlar ve "düşünüyorum" diyenler
-$recent = [];
-foreach (json_read(COMMENTS_FILE) as $eid => $list) {
-  $ev = event_by_id($eid);
-  if (!$ev || !event_visible($ev)) continue;
-  foreach ($list as $x) if (($x['status'] ?? '') === 'yayinda' && empty($x['admin']) && ($cu = user_by_id($x['user'] ?? '')) && user_public($cu)) $recent[] = $x + ['ev' => $ev];
-}
-usort($recent, fn($a, $b) => strcmp($b['date'], $a['date']));
-$recent = array_slice($recent, 0, 3);
-$memberCount = count(array_filter(users_all(), 'user_public'));
-
 $posts = [];
 if (is_file(DATA . '/blog.json')) { require_once __DIR__ . '/inc/blog.php'; $posts = array_slice(blog_published(), 0, 3); }
 
@@ -125,27 +114,6 @@ include __DIR__ . '/inc/header.php';
         <?php if (!empty($c['corporate']['brands'])): ?><p class="corp-band__brands"><span class="muted">İş birliği yaptığımız markalardan bazıları</span><?php foreach ($c['corporate']['brands'] as $b): ?><b><?= e($b) ?></b><?php endforeach; ?></p><?php endif; ?>
       </div>
       <div class="corp-band__act"><a class="btn" href="/kurumsal/">Kurumsal etkinlikler</a><a class="btn btn--ghost" href="/iletisim/?konu=kurumsal">Teklif isteyin</a></div>
-    </div>
-  </section>
-
-  <section class="section section--sand" aria-labelledby="topluluk">
-    <div class="wrap">
-      <div class="section-head" data-reveal>
-        <div><p class="label">Topluluk</p><h2 class="h2" id="topluluk"><?= e($h['community_title'] ?? 'Topluluktan') ?></h2><p class="muted section-head__sub"><?= e($h['community_text'] ?? '') ?></p></div>
-        <?php if (!current_user()): ?><a class="btn" href="/uye-ol/">Ücretsiz üye ol</a><?php endif; ?>
-      </div>
-      <?php if ($recent): ?>
-        <div class="voices">
-          <?php foreach ($recent as $r): $u = user_by_id($r['user']); ?>
-            <figure class="voice" data-reveal>
-              <blockquote><p><?= e(mb_strlen($r['text']) > 220 ? mb_substr($r['text'], 0, 219) . '…' : $r['text']) ?></p></blockquote>
-              <figcaption><a href="<?= e(user_url($u)) ?>"><?= avatar($u, 'sm') ?></a><span><a href="<?= e(user_url($u)) ?>"><strong><?= e($u['name']) ?></strong></a><a class="muted" href="<?= e(event_url($r['ev'])) ?>#yorumlar"><?= e($r['ev']['title']) ?></a></span></figcaption>
-            </figure>
-          <?php endforeach; ?>
-        </div>
-      <?php else: ?>
-        <p class="empty empty--left">İlk yorumu siz yazın: katıldığınız etkinliğin sayfasında deneyiminizi paylaşın.</p>
-      <?php endif; ?>
     </div>
   </section>
 

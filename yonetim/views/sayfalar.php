@@ -44,10 +44,6 @@ $pair = function (string $name, array $items, int $min, array $labels, bool $wit
         <label>Takvim<input name="calendar_title" value="<?= e($h['calendar_title'] ?? '') ?>"></label>
       </div>
       <label>Takvim açıklaması<input name="calendar_text" value="<?= e($h['calendar_text'] ?? '') ?>"></label>
-      <div class="grid2">
-        <label>Topluluk<input name="community_title" value="<?= e($h['community_title'] ?? '') ?>"></label>
-        <label>Topluluk açıklaması<input name="community_text" value="<?= e($h['community_text'] ?? '') ?>"></label>
-      </div>
       <label>Alıntı<textarea name="quote" rows="2"><?= e($h['quote'] ?? '') ?></textarea></label>
     </section>
     <section class="card">
