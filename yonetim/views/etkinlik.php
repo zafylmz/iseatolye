@@ -150,7 +150,6 @@ $faqRow = function (string $i, array $q): string {
       <label class="check"><input type="checkbox" name="waitlist" value="1"<?= !empty($ev['waitlist']) ? ' checked' : '' ?>> Kontenjan dolunca yedek liste tut</label>
       <label class="check"><input type="checkbox" name="approval" value="1"<?= !empty($ev['approval']) ? ' checked' : '' ?>> Her kaydı ben onaylayayım (ücretsiz etkinlikte de)</label>
       <label class="check"><input type="checkbox" name="show_left" value="1"<?= !empty($ev['show_left']) ? ' checked' : '' ?>> Kalan yer sayısını göster</label>
-      <label class="check"><input type="checkbox" name="show_attendees" value="1"<?= !empty($ev['show_attendees']) ? ' checked' : '' ?>> Katılan üyeleri etkinlik sayfasında göster</label>
       <label class="check"><input type="checkbox" name="comments" value="1"<?= ($ev['comments'] ?? true) !== false ? ' checked' : '' ?>> Yorumlara açık</label>
     </div>
     <label>Bu etkinliğe özel iptal koşulu <span class="opt">(boşsa genel koşul gösterilir)</span><textarea name="cancel_policy" rows="2" placeholder="<?= e((string) setting('cancel_policy', '')) ?>"><?= e($ev['cancel_policy'] ?? '') ?></textarea></label>

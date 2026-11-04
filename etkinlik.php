@@ -13,9 +13,6 @@ $cat = category($ev['category'] ?? '');
 $state = event_state($ev);
 $tickets = event_tickets($ev);
 $myReg = $me ? user_has_reg($me['id'], $ev['id']) : null;
-$interested = interested_users($ev['id']);
-$iThink = $me && isset(interests_of($ev['id'])[$me['id']]);
-$attendees = !empty($ev['show_attendees']) ? public_attendees($ev) : [];
 $comments = event_comments($ev['id']);
 $commentsOpen = ($ev['comments'] ?? true) !== false;
 $attendedIds = attendee_ids($ev, true);
@@ -164,33 +161,6 @@ $cta = function () use ($ev, $state, $myReg, $joinUrl, $me, $bookable) {
           <p class="muted"><?= nl2br(e($policy)) ?> <a class="link" href="/katilim-kosullari/">Katılım koşulları</a></p>
         </section>
         <?php endif; ?>
-
-        <section class="event__block community" id="katilimcilar" aria-labelledby="kimler">
-          <h2 class="h3" id="kimler">Kimler geliyor?</h2>
-          <div class="community__grid">
-            <div class="community__col">
-              <p class="label">Katılan üyeler · <?= count($attendees) ?></p>
-              <?php if ($attendees): ?><div class="faces"><?php foreach (array_slice($attendees, 0, 18) as $u): ?><a href="<?= e(user_url($u)) ?>" title="<?= e($u['name']) ?>"><?= avatar($u, 'sm') ?></a><?php endforeach; ?><?php if (count($attendees) > 18): ?><span class="faces__more">+<?= count($attendees) - 18 ?></span><?php endif; ?></div>
-              <?php else: ?><p class="muted small"><?= $past ? 'Katılımcı listesi gizli.' : 'İlk katılan siz olun.' ?></p><?php endif; ?>
-            </div>
-            <div class="community__col" data-interest-box>
-              <p class="label">Katılmayı düşünüyor · <span data-interest-count><?= count($interested) ?></span></p>
-              <div class="faces" data-interest-faces><?php foreach (array_slice($interested, 0, 18) as $u): ?><a href="<?= e(user_url($u)) ?>" title="<?= e($u['name']) ?>"<?= $me && $u['id'] === $me['id'] ? ' data-me' : '' ?>><?= avatar($u, 'sm') ?></a><?php endforeach; ?></div>
-              <?php if (!$past && !$myReg): ?>
-                <?php if ($me): ?>
-                  <form method="post" action="/uye-api.php" data-interest>
-                    <input type="hidden" name="csrf" value="<?= e($tok) ?>"><input type="hidden" name="action" value="ilgi"><input type="hidden" name="event" value="<?= e($ev['id']) ?>">
-                    <button class="chip<?= $iThink ? ' is-on' : '' ?>" type="submit" aria-pressed="<?= $iThink ? 'true' : 'false' ?>" data-me-avatar="<?= e(avatar($me, 'sm')) ?>" data-me-url="<?= e(user_url($me)) ?>"><?= icon('yildiz') ?><span><?= $iThink ? 'Düşünüyorum' : 'Katılmayı düşünüyorum' ?></span></button>
-                  </form>
-                  <p class="muted small">Kesin kayıt değildir; ilgilendiğinizi diğer katılımcılara gösterir.</p>
-                <?php else: ?>
-                  <a class="chip" href="/giris/?donus=<?= e(rawurlencode(event_url($ev) . '#katilimcilar')) ?>"><?= icon('yildiz') ?><span>Katılmayı düşünüyorum</span></a>
-                  <p class="muted small">İşaretlemek için <a href="/giris/?donus=<?= e(rawurlencode(event_url($ev))) ?>">giriş yapın</a> ya da <a href="/uye-ol/?donus=<?= e(rawurlencode(event_url($ev))) ?>">üye olun</a>.</p>
-                <?php endif; ?>
-              <?php endif; ?>
-            </div>
-          </div>
-        </section>
 
         <section class="event__block comments" id="yorumlar" aria-labelledby="yorum-baslik">
           <h2 class="h3" id="yorum-baslik">Yorumlar<?php if ($comments): ?> <span class="count"><?= count($comments) ?></span><?php endif; ?></h2>
