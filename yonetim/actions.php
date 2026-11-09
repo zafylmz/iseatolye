@@ -507,6 +507,15 @@ switch ($action) {
     $c['stats'] = [];
     foreach (array_values((array) ($_POST['stats'] ?? [])) as $s) if (trim((string) ($s['value'] ?? '')) !== '') $c['stats'][] = ['value' => trim((string) $s['value']), 'label' => trim((string) ($s['label'] ?? ''))];
     $c['home']['hero_image'] = image_pick('hero_image', (string) ($c['home']['hero_image'] ?? ''));
+    require_once ROOT . '/inc/banner.php';
+    $bn = home_banner();
+    $until = post('banner_until');
+    $c['home']['banner'] = [
+      'on' => !empty($_POST['banner_on']), 'title' => post('banner_title'), 'text' => post('banner_text'),
+      'date' => post('banner_date'), 'note' => post('banner_note'), 'url' => post('banner_url'),
+      'image' => image_pick('banner_image', (string) ($bn['image'] ?? '')),
+      'until' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $until) ? $until : '',
+    ];
     save_content($c);
     flash('Ana sayfa kaydedildi.');
     redirect('./?s=sayfalar');

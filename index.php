@@ -3,8 +3,10 @@ require_once __DIR__ . '/inc/bootstrap.php';
 require_once __DIR__ . '/inc/events.php';
 require_once __DIR__ . '/inc/calendar.php';
 require_once __DIR__ . '/inc/icons.php';
+require_once __DIR__ . '/inc/banner.php';
 $c = content();
 $h = $c['home'] ?? [];
+$banner = home_banner();
 $upcoming = upcoming_events();
 $featured = array_values(array_filter($upcoming, fn($ev) => !empty($ev['featured'])));
 $grid = array_slice($featured ?: $upcoming, 0, 6);
@@ -33,6 +35,19 @@ $title = $c['brand']['name'] . ' · ' . $c['brand']['tagline'];
 ob_start(); include __DIR__ . '/inc/cal-modal.php'; $bodyEnd = ob_get_clean();
 include __DIR__ . '/inc/header.php';
 ?>
+  <?php if (banner_visible($banner)): $bImg = trim((string) ($banner['image'] ?? '')); $bUrl = trim((string) ($banner['url'] ?? '')); ?>
+  <section class="hbanner" aria-label="Duyuru"<?= $bImg !== '' ? ' style="--hbanner-img: url(\'' . e($bImg) . '\')"' : '' ?>>
+    <div class="hbanner__inner">
+      <h2 class="hbanner__title"><?= nl2br(e(trim((string) $banner['title']))) ?></h2>
+      <span class="hbanner__rule" aria-hidden="true"></span>
+      <?php if (trim((string) ($banner['text'] ?? '')) !== ''): ?><p class="hbanner__text"><?= e(trim((string) $banner['text'])) ?></p><?php endif; ?>
+      <?php if (trim((string) ($banner['date'] ?? '')) !== ''): ?>
+        <?php if ($bUrl !== ''): ?><a class="hbanner__pill" href="<?= e($bUrl) ?>"><?= e(trim((string) $banner['date'])) ?></a><?php else: ?><p class="hbanner__pill"><?= e(trim((string) $banner['date'])) ?></p><?php endif; ?>
+      <?php endif; ?>
+      <?php if (trim((string) ($banner['note'] ?? '')) !== ''): ?><p class="hbanner__note"><?= e(trim((string) $banner['note'])) ?></p><?php endif; ?>
+    </div>
+  </section>
+  <?php endif; ?>
   <section class="hero">
     <div class="wrap hero__grid">
       <div class="hero__text">
