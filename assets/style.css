@@ -178,6 +178,23 @@ button { cursor: pointer; }
 .back .ico { width: 16px; height: 16px; }
 
 /* ---------- Ana sayfa girişi ---------- */
+.hbanner { position: relative; isolation: isolate; overflow: hidden; background: var(--sand) var(--hbanner-img, none) center / cover no-repeat; border-bottom: 1px solid var(--line); text-align: center; }
+.hbanner::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse 46% 78% at 50% 50%, rgba(250, 246, 240, .62), rgba(250, 246, 240, 0) 100%); }
+.hbanner__inner { max-width: 900px; margin-inline: auto; padding: clamp(34px, 4.4vw, 64px) var(--gut); display: grid; justify-items: center; }
+.hbanner__title { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 4.6vw, 64px); line-height: 1.05; letter-spacing: -.01em; color: #2e221a; text-wrap: balance; }
+.hbanner__rule { position: relative; display: block; width: 84px; height: 1px; margin-top: clamp(16px, 2vw, 24px); background: var(--accent); }
+.hbanner__rule::after { content: ''; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; background: var(--accent); transform: translate(-50%, -50%) rotate(45deg); }
+.hbanner__text { margin-top: clamp(16px, 2vw, 24px); max-width: 64ch; font-family: var(--serif); font-weight: 500; font-size: clamp(18px, 1.75vw, 23px); line-height: 1.45; color: #2e221a; text-wrap: pretty; }
+.hbanner__pill { display: inline-block; margin-top: clamp(18px, 2.2vw, 26px); padding: 8px 24px 9px; border-radius: var(--r-lg); background: var(--accent); color: #fffaf3; font-family: var(--serif); font-weight: 500; font-size: clamp(19px, 2vw, 27px); line-height: 1.25; transition: background-color .2s linear; }
+a.hbanner__pill:hover { background: var(--accent-hover); color: #fffaf3; }
+.hbanner__note { margin-top: 14px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: clamp(17px, 1.6vw, 22px); line-height: 1.35; color: #2e221a; }
+@media (max-width: 860px) {
+  /* Dar ekranda görselin ortası boş kalır: görsel alta tam genişlikte şerit olarak yerleşir, metin üstündeki krem zeminde durur. */
+  .hbanner { background-color: #f8e9de; background-size: 100% auto; background-position: 50% 100%; }
+  .hbanner::before { background: linear-gradient(#f8e9de 0, #f8e9de calc(100% - 34vw), rgba(248, 233, 222, .6) calc(100% - 26vw), rgba(248, 233, 222, 0) calc(100% - 14vw)); }
+  .hbanner__inner { padding-bottom: calc(30vw + 8px); }
+}
+
 .hero { padding-top: clamp(40px, 6vw, 84px); padding-bottom: clamp(48px, 6vw, 80px); }
 .hero__grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: clamp(36px, 6vw, 96px); align-items: center; }
 .hero__text .display { margin-top: 20px; }

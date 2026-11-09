@@ -19,9 +19,25 @@ $pair = function (string $name, array $items, int $min, array $labels, bool $wit
 ?>
 <div class="bar"><h1>Sayfalar</h1><nav class="seg"><?php foreach ($tabs as $k => $l): ?><a href="./?s=sayfalar&amp;t=<?= $k ?>"<?= $t === $k ? ' aria-current="page"' : '' ?>><?= $l ?></a><?php endforeach; ?></nav></div>
 
-<?php if ($t === 'ana'): $h = $c['home']; ?>
+<?php if ($t === 'ana'): $h = $c['home']; require_once ROOT . '/inc/banner.php'; $bn = home_banner(); ?>
   <form method="post" enctype="multipart/form-data">
     <?= hidden($tok, 'sayfa-ana') ?>
+    <section class="card">
+      <h2>Duyuru bannerı</h2>
+      <p class="hint">Ana sayfanın en üstünde, giriş bölümünün üzerinde büyük bir duyuru alanı olarak görünür. Boş bıraktığınız satır gösterilmez.<?php if (!empty($bn['on']) && !banner_visible($bn)): ?> <strong>Bitiş tarihi geçtiği için şu an görünmüyor.</strong><?php endif; ?></p>
+      <label class="check"><input type="checkbox" name="banner_on" value="1"<?= !empty($bn['on']) ? ' checked' : '' ?>> Bannerı göster</label>
+      <?= image_field('banner_image', (string) ($bn['image'] ?? ''), ['shape' => 'wide', 'hint' => 'Yatay arka plan görseli; ortası sade, süslemeler kenarlarda olmalı. 2000x670 piksel önerilir.']) ?>
+      <label>Büyük başlık <span class="opt">(alt satıra geçmek için Enter)</span><textarea name="banner_title" rows="2"><?= e($bn['title'] ?? '') ?></textarea></label>
+      <label>Açıklama<textarea name="banner_text" rows="4"><?= e($bn['text'] ?? '') ?></textarea></label>
+      <div class="grid2">
+        <label>Tarih kutusu<input name="banner_date" value="<?= e($bn['date'] ?? '') ?>" placeholder="25–30 Aralık · Özel Yılbaşı Etkinlikleri"></label>
+        <label>Tarih kutusu bağlantısı <span class="opt">(isteğe bağlı)</span><input name="banner_url" value="<?= e($bn['url'] ?? '') ?>" placeholder="/etkinlikler/"></label>
+      </div>
+      <div class="grid2">
+        <label>Alt not <span class="opt">(eğik yazı)</span><input name="banner_note" value="<?= e($bn['note'] ?? '') ?>"></label>
+        <label>Bitiş tarihi <span class="opt">(bu günden sonra kendiliğinden gizlenir)</span><input type="date" name="banner_until" value="<?= e($bn['until'] ?? '') ?>"></label>
+      </div>
+    </section>
     <section class="card">
       <h2>Giriş bölümü</h2>
       <p class="sub">Kemerli görsel</p>
